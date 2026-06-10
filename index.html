@@ -428,7 +428,7 @@ function initSwipe(row) {
   const bClr = row.querySelector('.btn-clear');
   let drag = false, sx, st, baseX = 0;
   let pressTimer = null, lpTimer = null, isHolding = false;
-  let expanded = false;
+  let expanded = false, justExpanded = false;
 
   function apply(rev) {
     const [ow, cw] = btnWidths(rev);
@@ -528,7 +528,7 @@ function initSwipe(row) {
     lpTimer = setTimeout(() => {
       lpTimer = null;
       if (!isHolding) return;
-      isHolding = false; drag = false;
+      isHolding = false; drag = false; justExpanded = true;
       card.style.transition = 'transform 200ms cubic-bezier(0.22,1,0.36,1)';
       card.style.transform = 'translateX(0) scale(1.04)';
       setTimeout(() => {
@@ -559,6 +559,11 @@ function initSwipe(row) {
   });
 
   card.addEventListener('pointerup', e => {
+    if (justExpanded) {
+      justExpanded = false;
+      e.stopPropagation(); return;
+    }
+
     if (expanded) {
       if (!e.target.closest('.exp-btn')) collapse();
       e.stopPropagation(); return;
