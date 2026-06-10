@@ -49,7 +49,7 @@
 
   /* ── Panel ── */
   #panels {
-    position: absolute; inset: 0; z-index: 11; overflow-x: hidden; overflow-y: auto;
+    position: absolute; inset: 0; z-index: 11; overflow: hidden;
     transform: translateY(100%);
     transition: transform 0.26s cubic-bezier(0.22,1,0.36,1);
     background: #0D0D0D;
@@ -150,17 +150,19 @@
   .exp-btn svg { width: 20px; height: 20px; }
 
   /* ── Stacked notification ── */
-  .notif-stack { position: relative; flex-shrink: 0; }
-  .stack-condensed { position: relative; padding-bottom: 10px; }
+  .notif-stack { position: relative; flex-shrink: 0; margin-bottom: 12px; }
+  .stack-condensed { position: relative; padding-bottom: 6px; cursor: pointer; }
+  .stack-condensed .notif-row { margin-bottom: 0; }
   .stack-peek {
     position: absolute; bottom: 0;
-    left: 48px; width: 444px; height: 41px;
-    background: #171717; border-radius: 12px;
+    left: 38px; width: 464px; height: 12px;
+    background: #171717; border-radius: 0 0 12px 12px;
   }
   .stack-front { background: #131313 !important; }
   .stack-badge { background: #303030 !important; }
   .stack-expanded {
     display: none; flex-direction: column;
+    padding-bottom: 24px;
   }
   .stack-expanded.open { display: flex; }
   .stack-label {
@@ -642,24 +644,64 @@ document.querySelectorAll('.notif-stack').forEach(stack => {
   const label = stack.querySelector('.stack-label');
   const frontRow = condensed.querySelector('.notif-row');
   const frontCard = condensed.querySelector('.notif-card');
-  let isOpen = false;
+  let isOpen = false, animating = false;
 
   initSwipe(frontRow);
   expanded.querySelectorAll('.notif-row').forEach(initSwipe);
 
-  frontCard.addEventListener('click', () => {
-    if (isOpen) return;
-    isOpen = true;
+  function openStack() {
+    if (isOpen || animating) return;
+    isOpen = true; animating = true;
+    const startH = stack.offsetHeight;
     condensed.style.display = 'none';
     expanded.classList.add('open');
-  });
+    const endH = stack.offsetHeight;
+    stack.style.height = startH + 'px';
+    stack.style.overflow = 'hidden';
+    expanded.style.opacity = '0';
+    requestAnimationFrame(() => {
+      stack.style.transition = 'height 300ms cubic-bezier(0.22,1,0.36,1)';
+      expanded.style.transition = 'opacity 200ms ease 80ms';
+      stack.style.height = endH + 'px';
+      expanded.style.opacity = '1';
+    });
+    setTimeout(() => {
+      stack.style.transition = ''; stack.style.height = '';
+      stack.style.overflow = '';
+      expanded.style.transition = ''; expanded.style.opacity = '';
+      animating = false;
+    }, 320);
+  }
 
-  label.addEventListener('click', () => {
-    if (!isOpen) return;
-    isOpen = false;
+  function closeStack() {
+    if (!isOpen || animating) return;
+    isOpen = false; animating = true;
+    const startH = stack.offsetHeight;
     expanded.classList.remove('open');
     condensed.style.display = '';
-  });
+    const endH = stack.offsetHeight;
+    condensed.style.display = 'none';
+    expanded.classList.add('open');
+    stack.style.height = startH + 'px';
+    stack.style.overflow = 'hidden';
+    requestAnimationFrame(() => {
+      stack.style.transition = 'height 250ms cubic-bezier(0.22,1,0.36,1)';
+      expanded.style.transition = 'opacity 120ms ease';
+      stack.style.height = endH + 'px';
+      expanded.style.opacity = '0';
+    });
+    setTimeout(() => {
+      expanded.classList.remove('open');
+      expanded.style.transition = ''; expanded.style.opacity = '';
+      condensed.style.display = '';
+      stack.style.transition = ''; stack.style.height = '';
+      stack.style.overflow = '';
+      animating = false;
+    }, 270);
+  }
+
+  frontCard.addEventListener('click', openStack);
+  label.addEventListener('click', closeStack);
 });
 
 /* Panel-level click handler */
