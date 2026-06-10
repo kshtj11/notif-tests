@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Notifications Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    touch-action: none;
+    user-select: none;
+    font-family: 'Sora', system-ui, sans-serif;
+  }
+
+  #frame {
+    position: relative;
+    width: 540px;
+    height: 620px;
+    background: #373737;
+    overflow: hidden;
+  }
+
+  /* Home screen */
+  #home {
+    position: absolute; inset: 0; z-index: 1;
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 80px; gap: 24px;
+  }
+  .widget { border-radius: 16px; background: rgba(255,255,255,0.06); }
+  .widget-a { width: 320px; height: 100px; }
+  .widget-b { width: 240px; height: 64px; }
+
+  /* Dim overlay */
+  #recents-bg {
+    position: absolute; inset: 0; z-index: 8;
+    background: #000; opacity: 0;
+    transition: opacity 0.26s cubic-bezier(0.22,1,0.36,1);
+    pointer-events: none;
+  }
+
+  /* Panel */
+  #panels {
+    position: absolute; inset: 0; z-index: 11;
+    overflow: hidden;
+    transform: translateY(100%);
+    transition: transform 0.26s cubic-bezier(0.22,1,0.36,1);
+    background: #0D0D0D;
+  }
+  #panels.open { transform: translateY(0); }
+
+  /* Notification list */
+  .notif-list {
+    padding: 48px 0 0;
+    display: flex; flex-direction: column;
+  }
+
+  /* Notification row */
+  .notif-row {
+    position: relative;
+    height: 96px;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+  }
+  .notif-row.dismissing {
+    height: 0; margin-bottom: 0; opacity: 0; overflow: hidden;
+    transition: height 350ms cubic-bezier(0.25,1,0.5,1),
+                margin-bottom 350ms cubic-bezier(0.25,1,0.5,1),
+                opacity 250ms ease-out;
+  }
+
+  /* Buttons behind the card */
+  .notif-actions {
+    position: absolute; top: 0; right: 10px; height: 96px;
+    display: flex; align-items: stretch; gap: 4px;
+  }
+  .notif-btn {
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px;
+    font-weight: 600; font-size: 16px; color: #fff;
+    cursor: pointer;
+    transform: scale(0.85); opacity: 0;
+  }
+  .btn-options { background: #303030; width: 113px; }
+  .btn-clear   { background: #202020; width: 69px; }
+
+  /* Card surface (draggable) */
+  .notif-card {
+    position: absolute; left: 10px; top: 0;
+    width: 520px; height: 96px;
+    background: #303030; border-radius: 12px;
+    display: flex; align-items: center;
+    padding: 0 10px 0 20px; gap: 16px;
+    z-index: 2; will-change: transform; cursor: grab;
+  }
+
+  /* Icon */
+  .notif-icon-wrap { position: relative; width: 52px; height: 52px; flex-shrink: 0; }
+  .notif-icon {
+    width: 52px; height: 52px;
+    background: #00D757; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .notif-icon svg { width: 28px; height: 28px; }
+  .notif-badge {
+    position: absolute; top: -4px; right: -10px;
+    min-width: 24px; height: 24px;
+    background: #FF3745; border-radius: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: #fff; padding: 0 6px;
+  }
+
+  /* Text */
+  .notif-text { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
+  .notif-header { display: flex; justify-content: space-between; align-items: baseline; }
+  .notif-name { font-weight: 600; font-size: 16px; color: #fff; }
+  .notif-time { font-weight: 400; font-size: 15px; color: #6A6A6A; }
+  .notif-subtitle { font-weight: 400; font-size: 14px; color: #6A6A6A; }
+
+  /* Swipe zone */
+  #swipe-zone {
+    position: absolute; bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 120px; height: 16px; z-index: 31;
+    display: flex; justify-content: center; align-items: center;
+  }
+  #swipe-zone::after {
+    content: ''; width: 48px; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.18);
+  }
+</style>
+</head>
+<body>
+
+<div id="frame">
+  <div id="home">
+    <div class="widget widget-a"></div>
+    <div class="widget widget-b"></div>
+  </div>
+  <div id="recents-bg"></div>
+  <div id="panels">
+    <div class="notif-list" id="notif-list">
+
+      <div class="notif-row">
+        <div class="notif-actions">
+          <div class="notif-btn btn-options">Options</div>
+          <div class="notif-btn btn-clear">Clear</div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0122 16.92z" stroke="#fff" stroke-width="1.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="notif-badge">2</div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header">
+              <span class="notif-name">Pritam</span>
+              <span class="notif-time">2 h</span>
+            </div>
+            <div class="notif-subtitle">Missed call</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="notif-row">
+        <div class="notif-actions">
+          <div class="notif-btn btn-options">Options</div>
+          <div class="notif-btn btn-clear">Clear</div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0122 16.92z" stroke="#fff" stroke-width="1.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="notif-badge">1</div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header">
+              <span class="notif-name">Mom</span>
+              <span class="notif-time">15 m</span>
+            </div>
+            <div class="notif-subtitle">Call me back</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="notif-row">
+        <div class="notif-actions">
+          <div class="notif-btn btn-options">Options</div>
+          <div class="notif-btn btn-clear">Clear</div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0122 16.92z" stroke="#fff" stroke-width="1.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="notif-badge">3</div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header">
+              <span class="notif-name">Arjun</span>
+              <span class="notif-time">5 h</span>
+            </div>
+            <div class="notif-subtitle">Missed call</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="notif-row">
+        <div class="notif-actions">
+          <div class="notif-btn btn-options">Options</div>
+          <div class="notif-btn btn-clear">Clear</div>
+        </div>
+        <div class="notif-card">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon" style="background:#5856D6">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#fff" stroke-width="1.83" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 6l-10 7L2 6" stroke="#fff" stroke-width="1.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header">
+              <span class="notif-name">Work</span>
+              <span class="notif-time">1 d</span>
+            </div>
+            <div class="notif-subtitle">Meeting reminder at 3 pm</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  <div id="swipe-zone"></div>
+</div>
+
+<script>
+/* ── Panel slide-up / dismiss ── */
+const frame  = document.getElementById('frame');
+const panels = document.getElementById('panels');
+const dim    = document.getElementById('recents-bg');
+const zone   = document.getElementById('swipe-zone');
+
+let tracking = false, startY = 0, startT = 0, lastY = 0, lastT = 0;
+let mode = '', justOpened = false;
+
+zone.addEventListener('pointerdown', e => {
+  if (panels.classList.contains('open')) return;
+  tracking = true; mode = 'open';
+  startY = lastY = e.clientY;
+  startT = lastT = performance.now();
+  frame.setPointerCapture(e.pointerId);
+  panels.style.transition = 'none';
+});
+
+panels.addEventListener('pointerdown', e => {
+  if (!panels.classList.contains('open')) return;
+  if (e.target.closest('.notif-row')) return;
+  tracking = true; mode = 'dismiss';
+  startY = lastY = e.clientY;
+  startT = lastT = performance.now();
+  frame.setPointerCapture(e.pointerId);
+  panels.style.transition = 'none';
+});
+
+frame.addEventListener('pointermove', e => {
+  if (!tracking) return;
+  lastY = e.clientY; lastT = performance.now();
+  if (mode === 'open') {
+    const up = startY - e.clientY;
+    if (up > 24) {
+      const f = Math.min(up / 620, 1);
+      panels.style.transform = `translateY(${100 - f * 100}%)`;
+      dim.style.opacity = f * 0.75;
+    }
+  } else if (mode === 'dismiss') {
+    const dy = Math.max(0, e.clientY - startY);
+    panels.style.transform = `translateY(${dy}px)`;
+    dim.style.opacity = Math.max(0, 0.75 * (1 - dy / 620));
+  }
+});
+
+frame.addEventListener('pointerup', e => {
+  if (!tracking) return;
+  tracking = false;
+  const restore = () => { panels.style.transition = ''; };
+  if (mode === 'open') {
+    const up = startY - e.clientY;
+    const dt = lastT - startT;
+    const vel = dt > 0 ? up / dt : 0;
+    if (up > 40 || vel > 0.4) {
+      restore(); panels.classList.add('open');
+      panels.style.transform = ''; dim.style.opacity = 0.75;
+      justOpened = true;
+      requestAnimationFrame(() => { justOpened = false; });
+    } else {
+      restore(); panels.style.transform = ''; dim.style.opacity = 0;
+    }
+  } else if (mode === 'dismiss') {
+    const dy = e.clientY - startY; restore();
+    if (dy > 90) {
+      panels.classList.remove('open');
+      panels.style.transform = ''; dim.style.opacity = 0;
+    } else {
+      panels.style.transform = ''; dim.style.opacity = 0.75;
+    }
+  }
+  mode = '';
+});
+
+frame.addEventListener('click', e => {
+  if (!panels.classList.contains('open') || justOpened) return;
+  if (panels.contains(e.target) || zone.contains(e.target)) return;
+  panels.style.transition = '';
+  panels.classList.remove('open');
+  panels.style.transform = ''; dim.style.opacity = 0;
+});
+
+/* ── Swipe-to-dismiss notifications ── */
+const CARD_W = 520;
+const SNAP_POS = 186;                  // Options(113) + gap(4) + Clear(69)
+const T_SNAP = CARD_W * 0.28;          // ~145 px
+const T_DISMISS = CARD_W * 0.62;       // ~322 px
+const FLICK_V = 0.5;                   // px / ms
+const SPR  = 'transform 350ms cubic-bezier(0.25,1,0.5,1)';
+const SPRA = 'all 350ms cubic-bezier(0.25,1,0.5,1)';
+
+let openRow = null;
+
+function initSwipe(row) {
+  const card = row.querySelector('.notif-card');
+  const bOpt = row.querySelector('.btn-options');
+  const bClr = row.querySelector('.btn-clear');
+  let drag = false, sx, st, baseX = 0;
+
+  function btns(frac) {
+    const s = 0.85 + 0.15 * frac;
+    bOpt.style.transform = `scale(${s})`; bOpt.style.opacity = frac;
+    bClr.style.transform = `scale(${s})`; bClr.style.opacity = frac;
+  }
+  function spring() {
+    card.style.transition = SPR;
+    bOpt.style.transition = SPRA;
+    bClr.style.transition = SPRA;
+  }
+  function doOpen() {
+    card.style.transform = `translateX(${-SNAP_POS}px)`;
+    btns(1); baseX = -SNAP_POS; openRow = row;
+  }
+  function doClose() {
+    card.style.transform = 'translateX(0)';
+    btns(0); baseX = 0;
+    if (openRow === row) openRow = null;
+  }
+  function doDismiss() {
+    card.style.transform = `translateX(${-CARD_W - 20}px)`;
+    bOpt.style.opacity = '0';
+    bClr.style.width = `${SNAP_POS}px`;
+    setTimeout(() => row.classList.add('dismissing'), 300);
+    setTimeout(() => row.remove(), 700);
+    if (openRow === row) openRow = null;
+  }
+
+  row._close = () => { spring(); doClose(); };
+
+  card.addEventListener('pointerdown', e => {
+    if (openRow && openRow !== row) { openRow._close(); openRow = null; }
+    drag = true; sx = e.clientX; st = performance.now();
+    card.setPointerCapture(e.pointerId);
+    card.style.transition = 'none';
+    bOpt.style.transition = 'none';
+    bClr.style.transition = 'none';
+    e.stopPropagation();
+  });
+
+  card.addEventListener('pointermove', e => {
+    if (!drag) return;
+    let dx = Math.min(0, Math.max(-CARD_W, e.clientX - sx + baseX));
+    card.style.transform = `translateX(${dx}px)`;
+    btns(Math.min(Math.abs(dx) / SNAP_POS, 1));
+    e.stopPropagation();
+  });
+
+  card.addEventListener('pointerup', e => {
+    if (!drag) return;
+    drag = false;
+    const rawDx = e.clientX - sx;
+    const dx = Math.min(0, rawDx + baseX);
+    const abs = Math.abs(dx);
+    const vel = (sx - e.clientX) / Math.max(1, performance.now() - st);
+    const tap = Math.abs(rawDx) < 5;
+    spring();
+    if (tap && baseX < 0) doClose();
+    else if (abs >= T_DISMISS || vel > FLICK_V) doDismiss();
+    else if (abs >= T_SNAP) doOpen();
+    else doClose();
+    e.stopPropagation();
+  });
+
+  bClr.addEventListener('click', e => { e.stopPropagation(); spring(); doDismiss(); });
+  bOpt.addEventListener('click', e => { e.stopPropagation(); spring(); doClose(); });
+}
+
+document.querySelectorAll('.notif-row').forEach(initSwipe);
+
+panels.addEventListener('click', e => {
+  if (openRow && !e.target.closest('.notif-row')) {
+    openRow._close(); openRow = null;
+  }
+});
+</script>
+</body>
+</html>
