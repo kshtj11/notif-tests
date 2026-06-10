@@ -30,6 +30,14 @@
   .widget { border-radius: 16px; background: rgba(255,255,255,0.06); }
   .widget-a { width: 320px; height: 100px; }
   .widget-b { width: 240px; height: 64px; }
+  .app-dock {
+    position: absolute; bottom: 36px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 20px;
+  }
+  .app-icon {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: rgba(255,255,255,0.08);
+  }
 
   /* Dim */
   #recents-bg {
@@ -62,10 +70,10 @@
                 opacity 250ms ease-out;
   }
 
-  /* Action buttons — anchored at right, grow leftward */
+  /* Buttons — anchored right, grow leftward */
   .notif-actions {
     position: absolute; top: 0; right: 10px; height: 96px;
-    display: flex; align-items: stretch; gap: 6px;
+    display: flex; align-items: stretch; gap: 5px;
   }
   .notif-btn {
     height: 96px; border-radius: 12px;
@@ -85,6 +93,7 @@
     display: flex; align-items: center;
     padding: 0 10px 0 20px; gap: 16px;
     z-index: 2; will-change: transform; cursor: grab;
+    transition: background 200ms ease;
   }
 
   /* Icon */
@@ -102,12 +111,33 @@
     font-size: 14px; font-weight: 600; color: #fff; padding: 0 6px;
   }
 
-  /* Text */
+  /* Normal text content */
   .notif-text { display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 0; }
   .notif-header { display: flex; justify-content: space-between; align-items: baseline; }
   .notif-name { font-weight: 600; font-size: 16px; color: #fff; }
   .notif-time { font-weight: 400; font-size: 15px; color: #6A6A6A; }
   .notif-subtitle { font-weight: 400; font-size: 14px; color: #6A6A6A; }
+
+  /* Expanded (long-press) content */
+  .notif-expanded {
+    display: none; align-items: center; gap: 14px;
+    flex: 1; min-width: 0;
+  }
+  .notif-card.expanded .notif-text { display: none; }
+  .notif-card.expanded .notif-badge { display: none; }
+  .notif-card.expanded .notif-expanded { display: flex; }
+  .notif-card.expanded { background: #3a3a3a; cursor: default; }
+
+  .exp-app-name { font-weight: 600; font-size: 15px; color: #fff; flex: 1; }
+  .exp-btn {
+    width: 38px; height: 38px; border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: background 150ms ease;
+  }
+  .exp-btn:active { background: rgba(255,255,255,0.18); }
+  .exp-btn svg { width: 20px; height: 20px; }
 
   /* Swipe zone */
   #swipe-zone {
@@ -127,6 +157,12 @@
   <div id="home">
     <div class="widget widget-a"></div>
     <div class="widget widget-b"></div>
+    <div class="app-dock">
+      <div class="app-icon"></div>
+      <div class="app-icon"></div>
+      <div class="app-icon"></div>
+      <div class="app-icon"></div>
+    </div>
   </div>
   <div id="recents-bg"></div>
   <div id="panels">
@@ -137,7 +173,7 @@
           <div class="notif-btn btn-options">Options</div>
           <div class="notif-btn btn-clear">Clear</div>
         </div>
-        <div class="notif-card">
+        <div class="notif-card" data-app="Phone" data-color="#00D757">
           <div class="notif-icon-wrap">
             <div class="notif-icon">
               <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0122 16.92z" stroke="#fff" stroke-width="1.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -151,6 +187,15 @@
             </div>
             <div class="notif-subtitle">Missed call</div>
           </div>
+          <div class="notif-expanded">
+            <span class="exp-app-name">Phone</span>
+            <div class="exp-btn exp-bell" title="Notification settings">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="exp-btn exp-settings" title="App settings">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -159,7 +204,7 @@
           <div class="notif-btn btn-options">Options</div>
           <div class="notif-btn btn-clear">Clear</div>
         </div>
-        <div class="notif-card">
+        <div class="notif-card" data-app="Phone" data-color="#00D757">
           <div class="notif-icon-wrap">
             <div class="notif-icon">
               <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0122 16.92z" stroke="#fff" stroke-width="1.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -172,6 +217,15 @@
               <span class="notif-time">15 m</span>
             </div>
             <div class="notif-subtitle">Call me back</div>
+          </div>
+          <div class="notif-expanded">
+            <span class="exp-app-name">Phone</span>
+            <div class="exp-btn exp-bell" title="Notification settings">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+            <div class="exp-btn exp-settings" title="App settings">
+              <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
           </div>
         </div>
       </div>
@@ -232,8 +286,7 @@ frame.addEventListener('pointerup', e => {
     if (up > 40 || vel > 0.4) {
       panels.classList.add('open');
       panels.style.transform = ''; dim.style.opacity = 0.75;
-      justOpened = true;
-      requestAnimationFrame(() => { justOpened = false; });
+      justOpened = true; requestAnimationFrame(() => { justOpened = false; });
     } else { panels.style.transform = ''; dim.style.opacity = 0; }
   } else if (mode === 'dismiss') {
     if (e.clientY - startY > 90) {
@@ -251,27 +304,33 @@ frame.addEventListener('click', e => {
   panels.style.transform = ''; dim.style.opacity = 0;
 });
 
-/* ── Swipe-to-dismiss (dynamic expanding buttons) ── */
+/* ── Swipe-to-dismiss + long-press ── */
 const CARD_W = 520;
 const T_SNAP = CARD_W * 0.28;
-const T_DISMISS = CARD_W * 0.62;
+const T_DISMISS_L = CARD_W * 0.85;
+const T_DISMISS_R = CARD_W * 0.35;
 const SNAP_REVEAL = 200;
-const FLICK_V = 0.5;
-const GAP = 6;
-const CLEAR_ONSET = 150;
+const FLICK_V_L = 1.2;
+const FLICK_V_R = 0.6;
+const BTN_GAP = 5;
+const CARD_PAD = 5;
+const CLEAR_ONSET = 240;
 const SPR = 'transform 350ms cubic-bezier(0.25,1,0.5,1)';
 const SPRA = 'all 350ms cubic-bezier(0.25,1,0.5,1)';
+const LP_TIME = 500;
 
 let openRow = null;
 
-/* Compute dynamic button widths from revealed px */
 function btnWidths(rev) {
   if (rev <= 0) return [0, 0];
-  if (rev < CLEAR_ONSET) return [rev, 0];
+  const usable = Math.max(0, rev - CARD_PAD);
+  if (usable <= 0) return [0, 0];
+  if (rev < CLEAR_ONSET) return [usable, 0];
   const extra = rev - CLEAR_ONSET;
-  const t = Math.min(extra / 300, 1);
-  const opt = CLEAR_ONSET - t * 37;          // 150 → 113
-  const clr = Math.max(0, rev - opt - GAP);  // rest goes to Clear
+  const t = Math.min(extra / 250, 1);
+  const optMax = CLEAR_ONSET - CARD_PAD;
+  const opt = optMax - t * (optMax - 113);
+  const clr = Math.max(0, usable - opt - BTN_GAP);
   return [Math.round(opt), Math.round(clr)];
 }
 
@@ -280,6 +339,7 @@ function initSwipe(row) {
   const bOpt = row.querySelector('.btn-options');
   const bClr = row.querySelector('.btn-clear');
   let drag = false, sx, st, baseX = 0;
+  let lpTimer = null, expanded = false;
 
   function apply(rev) {
     const [ow, cw] = btnWidths(rev);
@@ -305,48 +365,93 @@ function initSwipe(row) {
     apply(0); baseX = 0;
     if (openRow === row) openRow = null;
   }
-  function doDismiss() {
+  function doDismissLeft() {
+    const F = 'all 180ms cubic-bezier(0.25,1,0.5,1)';
+    card.style.transition = F; bOpt.style.transition = F; bClr.style.transition = F;
     card.style.transform = `translateX(-${CARD_W + 20}px)`;
-    apply(CARD_W);
-    bOpt.style.opacity = '0';
-    setTimeout(() => row.classList.add('dismissing'), 300);
-    setTimeout(() => row.remove(), 700);
+    bClr.style.width = `${CARD_W}px`; bClr.style.opacity = '1';
+    bOpt.style.width = '0px'; bOpt.style.opacity = '0';
+    setTimeout(() => row.classList.add('dismissing'), 180);
+    setTimeout(() => row.remove(), 550);
     if (openRow === row) openRow = null;
+  }
+  function doDismissRight() {
+    const F = 'all 180ms cubic-bezier(0.25,1,0.5,1)';
+    card.style.transition = F; bOpt.style.transition = F; bClr.style.transition = F;
+    card.style.transform = `translateX(${CARD_W + 20}px)`;
+    apply(0);
+    setTimeout(() => row.classList.add('dismissing'), 180);
+    setTimeout(() => row.remove(), 550);
+    if (openRow === row) openRow = null;
+  }
+  function expand() {
+    expanded = true;
+    card.classList.add('expanded');
+    card.style.transition = SPR;
+    card.style.transform = 'translateX(0)';
+    apply(0); baseX = 0;
+    if (openRow === row) openRow = null;
+  }
+  function collapse() {
+    expanded = false;
+    card.classList.remove('expanded');
   }
 
   row._close = () => { spring(); doClose(); };
 
   card.addEventListener('pointerdown', e => {
+    if (e.target.closest('.exp-btn')) return; // let button clicks through
+    if (expanded) return; // handle tap-to-close in pointerup
     if (openRow && openRow !== row) { openRow._close(); openRow = null; }
     drag = true; sx = e.clientX; st = performance.now();
     card.setPointerCapture(e.pointerId);
     instant();
+    // Long-press timer
+    lpTimer = setTimeout(() => {
+      lpTimer = null; drag = false;
+      expand();
+    }, LP_TIME);
     e.stopPropagation();
   });
+
   card.addEventListener('pointermove', e => {
     if (!drag) return;
-    let dx = Math.min(0, Math.max(-CARD_W, e.clientX - sx + baseX));
+    if (lpTimer && Math.abs(e.clientX - sx) > 8) {
+      clearTimeout(lpTimer); lpTimer = null;
+    }
+    let dx = Math.max(-CARD_W, Math.min(CARD_W, e.clientX - sx + baseX));
     card.style.transform = `translateX(${dx}px)`;
-    apply(Math.abs(dx));
+    if (dx < 0) apply(Math.abs(dx));
+    else apply(0);
     e.stopPropagation();
   });
+
   card.addEventListener('pointerup', e => {
-    if (!drag) return;
+    if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+    if (expanded) {
+      if (!e.target.closest('.exp-btn')) collapse();
+      e.stopPropagation(); return;
+    }
+    if (!drag) { e.stopPropagation(); return; }
     drag = false;
     const rawDx = e.clientX - sx;
-    const dx = Math.min(0, rawDx + baseX);
+    const dx = Math.max(-CARD_W, Math.min(CARD_W, rawDx + baseX));
     const abs = Math.abs(dx);
-    const vel = (sx - e.clientX) / Math.max(1, performance.now() - st);
+    const dt = Math.max(1, performance.now() - st);
     const tap = Math.abs(rawDx) < 5;
     spring();
-    if (tap && baseX < 0) doClose();
-    else if (abs >= T_DISMISS || vel > FLICK_V) doDismiss();
+    if (dx > 0) {
+      const vel = rawDx / dt;
+      if (abs >= T_DISMISS_R || vel > FLICK_V_R) doDismissRight();
+      else doClose();
+    } else if (tap && baseX < 0) doClose();
+    else if (abs >= T_DISMISS_L || (sx - e.clientX) / dt > FLICK_V_L) doDismissLeft();
     else if (abs >= T_SNAP) doOpen();
     else doClose();
     e.stopPropagation();
   });
 
-  bClr.addEventListener('click', e => { e.stopPropagation(); spring(); doDismiss(); });
+  bClr.addEventListener('click', e => { e.stopPropagation(); spring(); doDismissLeft(); });
   bOpt.addEventListener('click', e => { e.stopPropagation(); spring(); doClose(); });
 }
 
