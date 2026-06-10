@@ -404,7 +404,7 @@ const CLEAR_ONSET = 240;
 const SPR = 'transform 350ms cubic-bezier(0.25,1,0.5,1)';
 const SPRA = 'all 350ms cubic-bezier(0.25,1,0.5,1)';
 const LP_HOLD = 500;
-const LP_VISUAL = 150;
+const LP_VISUAL = 60;
 
 let openRow = null;
 let expandedRow = null;
@@ -427,7 +427,7 @@ function initSwipe(row) {
   const bOpt = row.querySelector('.btn-options');
   const bClr = row.querySelector('.btn-clear');
   let drag = false, sx, st, baseX = 0;
-  let pressTimer = null, isHolding = false, holdStart = 0;
+  let pressTimer = null, lpTimer = null, isHolding = false;
   let expanded = false;
 
   function apply(rev) {
@@ -491,6 +491,7 @@ function initSwipe(row) {
   }
   function cancelHold() {
     if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
     if (isHolding) {
       isHolding = false;
       card.style.transition = 'transform 200ms cubic-bezier(0.25,1,0.5,1)';
@@ -514,7 +515,6 @@ function initSwipe(row) {
     if (expandedRow && expandedRow !== row) { expandedRow._collapse(); expandedRow = null; }
 
     drag = true; sx = e.clientX; st = performance.now();
-    holdStart = st;
     card.setPointerCapture(e.pointerId);
     instant();
 
@@ -525,13 +525,26 @@ function initSwipe(row) {
       card.style.transform = 'translateX(0) scale(0.96)';
     }, LP_VISUAL);
 
+    lpTimer = setTimeout(() => {
+      lpTimer = null;
+      if (!isHolding) return;
+      isHolding = false; drag = false;
+      card.style.transition = 'transform 200ms cubic-bezier(0.22,1,0.36,1)';
+      card.style.transform = 'translateX(0) scale(1.04)';
+      setTimeout(() => {
+        card.style.transition = 'transform 180ms cubic-bezier(0.25,1,0.5,1)';
+        card.style.transform = 'translateX(0) scale(1)';
+        setTimeout(() => expand(), 80);
+      }, 180);
+    }, LP_HOLD);
+
     e.stopPropagation();
   });
 
   card.addEventListener('pointermove', e => {
     if (!drag) return;
 
-    if ((pressTimer || isHolding) && Math.abs(e.clientX - sx) > 8) {
+    if ((pressTimer || lpTimer || isHolding) && Math.abs(e.clientX - sx) > 8) {
       cancelHold();
       card.style.transition = 'none';
     }
@@ -546,29 +559,16 @@ function initSwipe(row) {
   });
 
   card.addEventListener('pointerup', e => {
-    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
-
     if (expanded) {
       if (!e.target.closest('.exp-btn')) collapse();
       e.stopPropagation(); return;
     }
 
-    if (isHolding) {
-      isHolding = false;
+    if (isHolding || pressTimer || lpTimer) {
+      cancelHold();
       drag = false;
-      const holdDur = performance.now() - holdStart;
-      if (holdDur >= LP_HOLD) {
-        card.style.transition = 'transform 200ms cubic-bezier(0.22,1,0.36,1)';
-        card.style.transform = 'translateX(0) scale(1.04)';
-        setTimeout(() => {
-          card.style.transition = 'transform 180ms cubic-bezier(0.25,1,0.5,1)';
-          card.style.transform = 'translateX(0) scale(1)';
-          setTimeout(() => expand(), 80);
-        }, 180);
-      } else {
-        card.style.transition = 'transform 250ms cubic-bezier(0.25,1,0.5,1)';
-        card.style.transform = 'translateX(0)';
-      }
+      card.style.transition = 'transform 250ms cubic-bezier(0.25,1,0.5,1)';
+      card.style.transform = 'translateX(0)';
       e.stopPropagation(); return;
     }
 
