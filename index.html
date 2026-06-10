@@ -73,7 +73,7 @@
   /* Buttons — anchored right, grow leftward */
   .notif-actions {
     position: absolute; top: 0; right: 10px; height: 96px;
-    display: flex; align-items: stretch; gap: 5px;
+    display: flex; align-items: stretch; gap: 6px;
   }
   .notif-btn {
     height: 96px; border-radius: 12px;
@@ -93,7 +93,6 @@
     display: flex; align-items: center;
     padding: 0 10px 0 20px; gap: 16px;
     z-index: 2; will-change: transform; cursor: grab;
-    transition: background 200ms ease;
   }
 
   /* Icon */
@@ -138,6 +137,45 @@
   }
   .exp-btn:active { background: rgba(255,255,255,0.18); }
   .exp-btn svg { width: 20px; height: 20px; }
+
+  /* Options menu */
+  .menu-backdrop {
+    position: absolute; inset: 0; z-index: 19;
+    display: none;
+  }
+  .menu-backdrop.active { display: block; }
+  .options-menu {
+    position: absolute;
+    background: #252525;
+    border-radius: 14px;
+    padding: 4px 0;
+    min-width: 250px;
+    transform-origin: top right;
+    transform: scale(0);
+    opacity: 0;
+    z-index: 20;
+    pointer-events: none;
+    transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
+                opacity 150ms ease;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  }
+  .options-menu.open {
+    transform: scale(1);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .options-menu-item {
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 400;
+    color: #fff;
+    cursor: pointer;
+    transition: background 80ms ease;
+  }
+  .options-menu-item:active { background: rgba(255,255,255,0.08); }
+  .options-menu-item + .options-menu-item {
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
 
   /* Swipe zone */
   #swipe-zone {
@@ -254,7 +292,7 @@ zone.addEventListener('pointerdown', e => {
 });
 panels.addEventListener('pointerdown', e => {
   if (!panels.classList.contains('open')) return;
-  if (e.target.closest('.notif-row')) return;
+  if (e.target.closest('.notif-row') || e.target.closest('.options-menu') || e.target.closest('.menu-backdrop')) return;
   tracking = true; mode = 'dismiss';
   startY = lastY = e.clientY; startT = lastT = performance.now();
   frame.setPointerCapture(e.pointerId);
@@ -290,6 +328,7 @@ frame.addEventListener('pointerup', e => {
     } else { panels.style.transform = ''; dim.style.opacity = 0; }
   } else if (mode === 'dismiss') {
     if (e.clientY - startY > 90) {
+      hideMenu();
       panels.classList.remove('open');
       panels.style.transform = ''; dim.style.opacity = 0;
     } else { panels.style.transform = ''; dim.style.opacity = 0.75; }
@@ -300,8 +339,55 @@ frame.addEventListener('click', e => {
   if (!panels.classList.contains('open') || justOpened) return;
   if (panels.contains(e.target) || zone.contains(e.target)) return;
   panels.style.transition = '';
+  hideMenu();
   panels.classList.remove('open');
   panels.style.transform = ''; dim.style.opacity = 0;
+});
+
+/* ── Options menu ── */
+const optionsMenu = document.createElement('div');
+optionsMenu.className = 'options-menu';
+optionsMenu.innerHTML = ['Remind in 15 Min','Mute for 1 Hour','Mute for Today','Turn Off Notifications','App settings']
+  .map(t => `<div class="options-menu-item">${t}</div>`).join('');
+panels.appendChild(optionsMenu);
+
+const menuBg = document.createElement('div');
+menuBg.className = 'menu-backdrop';
+panels.appendChild(menuBg);
+
+let menuRow = null;
+
+function showMenu(btnEl, row) {
+  const br = btnEl.getBoundingClientRect();
+  const pr = panels.getBoundingClientRect();
+  optionsMenu.style.top = (br.top - pr.top) + 'px';
+  optionsMenu.style.right = (pr.right - br.right) + 'px';
+  requestAnimationFrame(() => {
+    optionsMenu.classList.add('open');
+    menuBg.classList.add('active');
+  });
+  menuRow = row;
+}
+
+function hideMenu() {
+  if (!optionsMenu.classList.contains('open')) return;
+  optionsMenu.classList.remove('open');
+  menuBg.classList.remove('active');
+  if (menuRow) {
+    menuRow._close();
+    menuRow = null;
+  }
+}
+
+menuBg.addEventListener('pointerdown', e => {
+  e.stopPropagation();
+  hideMenu();
+});
+optionsMenu.querySelectorAll('.options-menu-item').forEach(item => {
+  item.addEventListener('click', e => {
+    e.stopPropagation();
+    hideMenu();
+  });
 });
 
 /* ── Swipe-to-dismiss + long-press ── */
@@ -312,14 +398,16 @@ const T_DISMISS_R = CARD_W * 0.35;
 const SNAP_REVEAL = 200;
 const FLICK_V_L = 1.2;
 const FLICK_V_R = 0.6;
-const BTN_GAP = 5;
-const CARD_PAD = 5;
+const BTN_GAP = 6;
+const CARD_PAD = 8;
 const CLEAR_ONSET = 240;
 const SPR = 'transform 350ms cubic-bezier(0.25,1,0.5,1)';
 const SPRA = 'all 350ms cubic-bezier(0.25,1,0.5,1)';
-const LP_TIME = 500;
+const LP_HOLD = 500;
+const LP_VISUAL = 150;
 
 let openRow = null;
+let expandedRow = null;
 
 function btnWidths(rev) {
   if (rev <= 0) return [0, 0];
@@ -339,7 +427,8 @@ function initSwipe(row) {
   const bOpt = row.querySelector('.btn-options');
   const bClr = row.querySelector('.btn-clear');
   let drag = false, sx, st, baseX = 0;
-  let lpTimer = null, expanded = false;
+  let pressTimer = null, isHolding = false, holdStart = 0;
+  let expanded = false;
 
   function apply(rev) {
     const [ow, cw] = btnWidths(rev);
@@ -347,6 +436,7 @@ function initSwipe(row) {
     bClr.style.width = cw + 'px';
     bOpt.style.opacity = Math.min(rev / 60, 1);
     bClr.style.opacity = cw > 10 ? Math.min(cw / 40, 1) : 0;
+    bClr.style.display = cw > 0 ? '' : 'none';
   }
   function spring() {
     card.style.transition = SPR;
@@ -369,6 +459,7 @@ function initSwipe(row) {
     const F = 'all 180ms cubic-bezier(0.25,1,0.5,1)';
     card.style.transition = F; bOpt.style.transition = F; bClr.style.transition = F;
     card.style.transform = `translateX(-${CARD_W + 20}px)`;
+    bClr.style.display = '';
     bClr.style.width = `${CARD_W}px`; bClr.style.opacity = '1';
     bOpt.style.width = '0px'; bOpt.style.opacity = '0';
     setTimeout(() => row.classList.add('dismissing'), 180);
@@ -386,52 +477,101 @@ function initSwipe(row) {
   }
   function expand() {
     expanded = true;
+    expandedRow = row;
     card.classList.add('expanded');
-    card.style.transition = SPR;
-    card.style.transform = 'translateX(0)';
     apply(0); baseX = 0;
     if (openRow === row) openRow = null;
   }
   function collapse() {
     expanded = false;
+    if (expandedRow === row) expandedRow = null;
     card.classList.remove('expanded');
+    card.style.transition = SPR;
+    card.style.transform = 'translateX(0)';
+  }
+  function cancelHold() {
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+    if (isHolding) {
+      isHolding = false;
+      card.style.transition = 'transform 200ms cubic-bezier(0.25,1,0.5,1)';
+      card.style.transform = 'translateX(0)';
+    }
   }
 
   row._close = () => { spring(); doClose(); };
+  row._collapse = () => { if (expanded) collapse(); };
 
   card.addEventListener('pointerdown', e => {
-    if (e.target.closest('.exp-btn')) return; // let button clicks through
-    if (expanded) return; // handle tap-to-close in pointerup
+    if (e.target.closest('.exp-btn')) return;
+
+    if (expanded) {
+      e.stopPropagation();
+      return;
+    }
+
+    hideMenu();
     if (openRow && openRow !== row) { openRow._close(); openRow = null; }
+    if (expandedRow && expandedRow !== row) { expandedRow._collapse(); expandedRow = null; }
+
     drag = true; sx = e.clientX; st = performance.now();
+    holdStart = st;
     card.setPointerCapture(e.pointerId);
     instant();
-    // Long-press timer
-    lpTimer = setTimeout(() => {
-      lpTimer = null; drag = false;
-      expand();
-    }, LP_TIME);
+
+    pressTimer = setTimeout(() => {
+      pressTimer = null;
+      isHolding = true;
+      card.style.transition = 'transform 250ms cubic-bezier(0.25,1,0.5,1)';
+      card.style.transform = 'translateX(0) scale(0.96)';
+    }, LP_VISUAL);
+
     e.stopPropagation();
   });
 
   card.addEventListener('pointermove', e => {
     if (!drag) return;
-    if (lpTimer && Math.abs(e.clientX - sx) > 8) {
-      clearTimeout(lpTimer); lpTimer = null;
+
+    if ((pressTimer || isHolding) && Math.abs(e.clientX - sx) > 8) {
+      cancelHold();
+      card.style.transition = 'none';
     }
-    let dx = Math.max(-CARD_W, Math.min(CARD_W, e.clientX - sx + baseX));
-    card.style.transform = `translateX(${dx}px)`;
-    if (dx < 0) apply(Math.abs(dx));
-    else apply(0);
+
+    if (!isHolding) {
+      let dx = Math.max(-CARD_W, Math.min(CARD_W, e.clientX - sx + baseX));
+      card.style.transform = `translateX(${dx}px)`;
+      if (dx < 0) apply(Math.abs(dx));
+      else apply(0);
+    }
     e.stopPropagation();
   });
 
   card.addEventListener('pointerup', e => {
-    if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+    if (pressTimer) { clearTimeout(pressTimer); pressTimer = null; }
+
     if (expanded) {
       if (!e.target.closest('.exp-btn')) collapse();
       e.stopPropagation(); return;
     }
+
+    if (isHolding) {
+      isHolding = false;
+      drag = false;
+      const holdDur = performance.now() - holdStart;
+      if (holdDur >= LP_HOLD) {
+        card.style.transition = 'transform 200ms cubic-bezier(0.22,1,0.36,1)';
+        card.style.transform = 'translateX(0) scale(1.04)';
+        setTimeout(() => {
+          card.style.transition = 'transform 180ms cubic-bezier(0.25,1,0.5,1)';
+          card.style.transform = 'translateX(0) scale(1)';
+          setTimeout(() => expand(), 80);
+        }, 180);
+      } else {
+        card.style.transition = 'transform 250ms cubic-bezier(0.25,1,0.5,1)';
+        card.style.transform = 'translateX(0)';
+      }
+      e.stopPropagation(); return;
+    }
+
     if (!drag) { e.stopPropagation(); return; }
     drag = false;
     const rawDx = e.clientX - sx;
@@ -452,12 +592,19 @@ function initSwipe(row) {
   });
 
   bClr.addEventListener('click', e => { e.stopPropagation(); spring(); doDismissLeft(); });
-  bOpt.addEventListener('click', e => { e.stopPropagation(); spring(); doClose(); });
+  bOpt.addEventListener('click', e => {
+    e.stopPropagation();
+    showMenu(bOpt, row);
+  });
 }
 
 document.querySelectorAll('.notif-row').forEach(initSwipe);
 
 panels.addEventListener('click', e => {
+  if (e.target.closest('.options-menu') || e.target.closest('.menu-backdrop')) return;
+  if (expandedRow && !e.target.closest('.notif-card')) {
+    expandedRow._collapse(); expandedRow = null;
+  }
   if (openRow && !e.target.closest('.notif-row')) {
     openRow._close(); openRow = null;
   }
