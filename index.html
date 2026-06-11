@@ -152,6 +152,31 @@
   .exp-btn:active { background: rgba(255,255,255,0.18); }
   .exp-btn svg { width: 20px; height: 20px; }
 
+  /* ── Message expand (tap to expand card) ── */
+  .notif-card.msg-expandable { cursor: pointer; }
+  .notif-card.msg-expandable .msg-top {
+    display: flex; align-items: center; gap: 20px; width: 100%;
+  }
+  .notif-card.msg-expandable .msg-full { display: none; }
+  .notif-card.msg-expandable .msg-actions { display: none; }
+  .notif-card.msg-expandable.msg-open {
+    height: 160px; flex-direction: column; justify-content: center;
+    align-items: flex-start; padding: 20px 20px 16px; gap: 0;
+  }
+  .notif-card.msg-open .msg-top { margin-bottom: 12px; }
+  .notif-card.msg-open .notif-subtitle { display: none; }
+  .notif-card.msg-open .msg-full {
+    display: block; font-size: 14px; font-weight: 400;
+    color: #6A6A6A; line-height: 18px; width: 100%; margin-bottom: auto;
+  }
+  .notif-card.msg-open .msg-actions {
+    display: flex; justify-content: center; align-items: center;
+    gap: 95px; width: 100%;
+    font-size: 15px; font-weight: 600; color: #fff;
+  }
+  .notif-card.msg-open .msg-actions span { cursor: pointer; }
+  .notif-row:has(.msg-open) { height: 160px; transition: height 250ms cubic-bezier(0.22,1,0.36,1); }
+
   /* ── Stacked notification ── */
   .notif-stack { position: relative; flex-shrink: 0; margin-bottom: 20px; margin-top: 8px; }
   .stack-condensed { position: relative; padding-bottom: 6px; cursor: pointer; }
@@ -276,25 +301,29 @@
               <div class="notif-btn btn-options">Options</div>
               <div class="notif-btn btn-clear">Clear</div>
             </div>
-            <div class="notif-card stack-front" data-app="WhatsApp">
-              <div class="notif-icon-wrap">
-                <div class="notif-avatar"></div>
-                <div class="notif-badge stack-badge">2</div>
-                <div class="app-mini">
-                  <svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div class="notif-card stack-front msg-expandable" data-app="WhatsApp" style="box-shadow: 2px 0px 3px rgba(0,0,0,0.25);">
+              <div class="msg-top">
+                <div class="notif-icon-wrap">
+                  <div class="notif-avatar" style="background:#8C93FF"></div>
+                  <div class="notif-badge" style="background:#CCC; color:#2E2E2E; font-size:16px; min-width:24px;">3</div>
+                  <div class="app-mini">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0122 16.92z" stroke="#fff" stroke-width="1.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="notif-text">
+                  <div class="notif-header">
+                    <span class="notif-name">Phoebe Bridgers</span>
+                    <span class="notif-time">2 mins</span>
+                  </div>
+                  <div class="notif-subtitle">I know the end</div>
+                  <div class="msg-full">I know the end<br>That is a song i wrote<br>yes it indeed is</div>
                 </div>
               </div>
-              <div class="notif-text">
-                <div class="notif-header">
-                  <span class="notif-name">Phoebe Bridgers</span>
-                  <span class="notif-time">2 m</span>
-                </div>
-                <div class="notif-subtitle">I know the end</div>
-              </div>
+              <div class="msg-actions"><span>Reply</span><span style="color:#6A6A6A">|</span><span>Mute</span></div>
               <div class="notif-expanded">
                 <span class="exp-app-name">WhatsApp</span>
                 <div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                <div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div>
               </div>
             </div>
           </div>
@@ -306,24 +335,29 @@
               <div class="notif-btn btn-options">Options</div>
               <div class="notif-btn btn-clear">Clear</div>
             </div>
-            <div class="notif-card" data-app="WhatsApp">
-              <div class="notif-icon-wrap">
-                <div class="notif-avatar"></div>
-                <div class="app-mini">
-                  <svg viewBox="0 0 24 24" fill="none"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div class="notif-card msg-expandable" data-app="WhatsApp" style="box-shadow: 2px 0px 3px rgba(0,0,0,0.25);">
+              <div class="msg-top">
+                <div class="notif-icon-wrap">
+                  <div class="notif-avatar" style="background:#8C93FF"></div>
+                  <div class="notif-badge" style="background:#CCC; color:#2E2E2E; font-size:16px; min-width:24px;">3</div>
+                  <div class="app-mini">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.12.96.36 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.34 1.85.58 2.81.7A2 2 0 0122 16.92z" stroke="#fff" stroke-width="1.83" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </div>
+                </div>
+                <div class="notif-text">
+                  <div class="notif-header">
+                    <span class="notif-name">Phoebe Bridgers</span>
+                    <span class="notif-time">2 mins</span>
+                  </div>
+                  <div class="notif-subtitle">I know the end</div>
+                  <div class="msg-full">I know the end<br>That is a song i wrote<br>yes it indeed is</div>
                 </div>
               </div>
-              <div class="notif-text">
-                <div class="notif-header">
-                  <span class="notif-name">Phoebe Bridgers</span>
-                  <span class="notif-time">2 m</span>
-                </div>
-                <div class="notif-subtitle">I know the end</div>
-              </div>
+              <div class="msg-actions"><span>Reply</span><span style="color:#6A6A6A">|</span><span>Mute</span></div>
               <div class="notif-expanded">
                 <span class="exp-app-name">WhatsApp</span>
                 <div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-                <div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+                <div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div>
               </div>
             </div>
           </div>
@@ -862,7 +896,19 @@ function initSwipe(row) {
     }
     if (justExpanded) { justExpanded = false; e.stopPropagation(); return; }
     if (expanded) { if (!e.target.closest('.exp-btn')) collapse(); e.stopPropagation(); return; }
-    if (holding || pressT || lpT) { cancelHold(); drag = false; e.stopPropagation(); return; }
+    if (holding || pressT || lpT) {
+      cancelHold(); drag = false;
+      /* Tap on msg-expandable card toggles expand */
+      if (card.classList.contains('msg-expandable') && Math.abs(e.clientX - sx) < 8 && Math.abs(e.clientY - sy) < 8) {
+        const isOpen = card.classList.toggle('msg-open');
+        const r = card.closest('.notif-row');
+        if (r) { r.style.transition = 'height 250ms cubic-bezier(0.22,1,0.36,1)'; r.style.height = isOpen ? '160px' : '96px'; }
+        /* Hide badge when open */
+        const badge = card.querySelector('.notif-badge');
+        if (badge) badge.style.display = isOpen ? 'none' : '';
+      }
+      e.stopPropagation(); return;
+    }
     if (!drag) { e.stopPropagation(); return; }
     drag = false;
 
