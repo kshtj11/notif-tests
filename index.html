@@ -156,7 +156,7 @@
   .notif-card.drag-expandable {
     overflow: hidden; touch-action: none;
     will-change: height;
-    align-items: flex-start; padding-top: 22px;
+    align-items: flex-start; padding-top: 22px; padding-bottom: 22px;
   }
   .notif-card.drag-expandable .drag-top {
     display: flex; align-items: flex-start; gap: 16px; width: 100%;
@@ -713,7 +713,7 @@ function initSwipe(row) {
   const dragFull = isDragExpandable ? card.querySelector('.drag-full') : null;
   const dragBadge = isDragExpandable ? card.querySelector('.notif-badge') : null;
   let dragExpanding = false, dragOpenAmt = 0;
-  const DRAG_CLOSED_H = 96, DRAG_OPEN_H = 200, DRAG_SNAP_THRESHOLD = 40;
+  const DRAG_CLOSED_H = 96, DRAG_OPEN_H = 220, DRAG_SNAP_THRESHOLD = 40;
   let isDragOpen = false;
 
   let dragRaf = 0;
