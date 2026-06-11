@@ -153,7 +153,10 @@
   .exp-btn svg { width: 20px; height: 20px; }
 
   /* ── Drag-expand (pull down to reveal full text) ── */
-  .notif-card.drag-expandable { overflow: hidden; }
+  .notif-card.drag-expandable {
+    overflow: hidden; touch-action: none;
+    will-change: height;
+  }
   .notif-card.drag-expandable .drag-top {
     display: flex; align-items: center; gap: 16px; width: 100%;
   }
@@ -161,6 +164,7 @@
     display: block; font-size: 14px; font-weight: 400;
     color: #6A6A6A; line-height: 18px; width: 100%;
     max-height: 0; overflow: hidden; opacity: 0;
+    will-change: max-height, opacity;
   }
   .notif-card.drag-expandable .notif-subtitle {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -784,18 +788,21 @@ function initSwipe(row) {
   const DRAG_CLOSED_H = 96, DRAG_OPEN_H = 200, DRAG_SNAP_THRESHOLD = 40;
   let isDragOpen = false;
 
+  let dragRaf = 0;
   function setDragHeight(h) {
-    const clamped = Math.max(DRAG_CLOSED_H, Math.min(DRAG_OPEN_H, h));
-    card.style.height = clamped + 'px';
-    row.style.height = clamped + 'px';
-    /* Fade in the full text proportionally */
-    const progress = Math.max(0, (clamped - DRAG_CLOSED_H) / (DRAG_OPEN_H - DRAG_CLOSED_H));
-    if (dragFull) {
-      dragFull.style.maxHeight = (progress * 120) + 'px';
-      dragFull.style.opacity = progress;
-      dragFull.style.transition = 'none';
-    }
-    dragOpenAmt = clamped - DRAG_CLOSED_H;
+    if (dragRaf) cancelAnimationFrame(dragRaf);
+    dragRaf = requestAnimationFrame(() => {
+      dragRaf = 0;
+      const clamped = Math.max(DRAG_CLOSED_H, Math.min(DRAG_OPEN_H, h));
+      card.style.height = clamped + 'px';
+      row.style.height = clamped + 'px';
+      const progress = Math.max(0, (clamped - DRAG_CLOSED_H) / (DRAG_OPEN_H - DRAG_CLOSED_H));
+      if (dragFull) {
+        dragFull.style.maxHeight = (progress * 120) + 'px';
+        dragFull.style.opacity = progress;
+      }
+      dragOpenAmt = clamped - DRAG_CLOSED_H;
+    });
   }
 
   function snapDragOpen() {
@@ -830,7 +837,7 @@ function initSwipe(row) {
     scrollVelY = 0; scrollPrevT = performance.now();
     card.setPointerCapture(e.pointerId);
     instant();
-    if (isDragExpandable) { card.style.transition = 'none'; row.style.transition = 'none'; }
+    if (isDragExpandable) { card.style.transition = 'none'; row.style.transition = 'none'; if (dragFull) dragFull.style.transition = 'none'; }
 
     pressT = setTimeout(() => {
       pressT = null; holding = true;
