@@ -721,20 +721,22 @@ function initSwipe(row) {
   row._close = () => { spring(); doClose(); };
   row._collapse = () => { if (expanded) collapse(); };
 
-  let sy, dirLocked = false, ptrId = null;
+  let sy, lastPY, dirLocked = false, isVertical = false, ptrId = null;
+  let scrollVelY = 0, scrollPrevT = 0;
 
   card.addEventListener('pointerdown', e => {
     if (e.target.closest('.exp-btn')) return;
-    if (expanded) { return; }
+    if (expanded) { e.stopPropagation(); return; }
 
     hideMenu();
     if (openRow && openRow !== row) { openRow._close(); openRow = null; }
     if (expandedRow && expandedRow !== row) { expandedRow._collapse(); }
 
-    drag = true; sx = e.clientX; sy = e.clientY;
+    drag = true; sx = e.clientX; sy = e.clientY; lastPY = e.clientY;
     st = performance.now();
-    dirLocked = false; ptrId = e.pointerId;
-    /* Do NOT capture — let browser handle vertical scroll natively */
+    dirLocked = false; isVertical = false; ptrId = e.pointerId;
+    scrollVelY = 0; scrollPrevT = performance.now();
+    card.setPointerCapture(e.pointerId);
     instant();
 
     pressT = setTimeout(() => {
@@ -755,22 +757,30 @@ function initSwipe(row) {
         setTimeout(expand, 80);
       }, 180);
     }, 500);
+
+    e.stopPropagation();
   });
 
   card.addEventListener('pointermove', e => {
-    if (!drag) return;
+    if (!drag && !isVertical) return;
     const adx = Math.abs(e.clientX - sx), ady = Math.abs(e.clientY - sy);
 
-    /* Lock direction after 6px of movement */
+    /* Lock direction once after 6px */
     if (!dirLocked && (adx > 6 || ady > 6)) {
       dirLocked = true;
-      if (ady > adx) {
-        /* Vertical — cancel card gesture, let browser scroll */
-        cancelHold(); drag = false;
-        return;
-      }
-      /* Horizontal — NOW capture pointer for card swipe */
-      try { card.setPointerCapture(ptrId); } catch(_){}
+      isVertical = ady > adx;
+      if (isVertical) { cancelHold(); drag = false; }
+    }
+
+    if (isVertical) {
+      /* Manual scroll with velocity tracking */
+      const now = performance.now();
+      scrollVelY = (lastPY - e.clientY) / Math.max(1, now - scrollPrevT);
+      scrollPrevT = now;
+      panels.scrollTop += (lastPY - e.clientY);
+      lastPY = e.clientY;
+      e.stopPropagation();
+      return;
     }
     if (!dirLocked) return;
 
@@ -782,13 +792,24 @@ function initSwipe(row) {
       card.style.transform = `translateX(${dx}px)`;
       if (dx < 0) apply(Math.abs(dx)); else apply(0);
     }
+    e.stopPropagation();
   });
 
   card.addEventListener('pointerup', e => {
-    if (justExpanded) { justExpanded = false; return; }
-    if (expanded) { if (!e.target.closest('.exp-btn')) collapse(); return; }
-    if (holding || pressT || lpT) { cancelHold(); drag = false; return; }
-    if (!drag) return;
+    if (isVertical) {
+      /* Momentum on release */
+      if (Math.abs(scrollVelY) > 0.3) {
+        panels.style.scrollBehavior = 'smooth';
+        panels.scrollTop += scrollVelY * 300;
+        setTimeout(() => { panels.style.scrollBehavior = ''; }, 400);
+      }
+      isVertical = false; dirLocked = false; scrollVelY = 0;
+      e.stopPropagation(); return;
+    }
+    if (justExpanded) { justExpanded = false; e.stopPropagation(); return; }
+    if (expanded) { if (!e.target.closest('.exp-btn')) collapse(); e.stopPropagation(); return; }
+    if (holding || pressT || lpT) { cancelHold(); drag = false; e.stopPropagation(); return; }
+    if (!drag) { e.stopPropagation(); return; }
     drag = false;
 
     const rawDx = e.clientX - sx;
