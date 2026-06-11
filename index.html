@@ -535,10 +535,15 @@ zone.addEventListener('pointerdown', e => {
   frame.setPointerCapture(e.pointerId);
   panels.style.transition = 'none';
 });
+let panelScrollMode = false, panelLastPY = 0, panelVelY = 0, panelPrevY = 0, panelPrevT = 0;
+
 panels.addEventListener('pointerdown', e => {
   if (!panels.classList.contains('open')) return;
   if (e.target.closest('.notif-row') || e.target.closest('.options-menu') || e.target.closest('.menu-backdrop')) return;
-  tracking = true; mode = 'dismiss';
+  /* Start as scroll; only switch to dismiss if at top + pulling down */
+  panelScrollMode = true; panelLastPY = e.clientY;
+  panelVelY = 0; panelPrevY = e.clientY; panelPrevT = performance.now();
+  tracking = true; mode = 'panel-drag';
   startY = lastY = e.clientY; startT = lastT = performance.now();
   frame.setPointerCapture(e.pointerId);
   panels.style.transition = 'none';
@@ -546,6 +551,7 @@ panels.addEventListener('pointerdown', e => {
 frame.addEventListener('pointermove', e => {
   if (!tracking) return;
   lastY = e.clientY; lastT = performance.now();
+
   if (mode === 'open') {
     const up = startY - e.clientY;
     if (up > 24) {
@@ -553,10 +559,28 @@ frame.addEventListener('pointermove', e => {
       panels.style.transform = `translateY(${100 - f * 100}%)`;
       dim.style.opacity = f * 0.75;
     }
-  } else if (mode === 'dismiss') {
-    const dy = Math.max(0, e.clientY - startY);
-    panels.style.transform = `translateY(${dy}px)`;
-    dim.style.opacity = Math.max(0, 0.75 * (1 - dy / 620));
+  } else if (mode === 'panel-drag') {
+    const dy = e.clientY - panelPrevY;
+    const dt = Math.max(1, performance.now() - panelPrevT);
+    panelVelY = dy / dt;
+    panelPrevY = e.clientY; panelPrevT = performance.now();
+
+    const atTop = panels.scrollTop <= 0;
+    const pullingDown = e.clientY - startY > 0;
+
+    if (atTop && pullingDown && panels.scrollTop <= 0) {
+      /* Switch to dismiss mode */
+      panelScrollMode = false;
+      const dismissDy = Math.max(0, e.clientY - startY);
+      panels.style.transform = `translateY(${dismissDy}px)`;
+      dim.style.opacity = Math.max(0, 0.75 * (1 - dismissDy / 620));
+    } else {
+      /* Scroll the panel */
+      panelScrollMode = true;
+      panels.scrollTop += (panelLastPY - e.clientY);
+      panels.style.transform = ''; dim.style.opacity = 0.75;
+    }
+    panelLastPY = e.clientY;
   }
 });
 frame.addEventListener('pointerup', e => {
@@ -571,12 +595,22 @@ frame.addEventListener('pointerup', e => {
       panels.style.transform = ''; dim.style.opacity = 0.75;
       justOpened = true; requestAnimationFrame(() => { justOpened = false; });
     } else { panels.style.transform = ''; dim.style.opacity = 0; }
-  } else if (mode === 'dismiss') {
-    if (e.clientY - startY > 90) {
+  } else if (mode === 'panel-drag') {
+    const pullDown = e.clientY - startY;
+    if (!panelScrollMode && panels.scrollTop <= 0 && pullDown > 90) {
       hideMenu();
       panels.classList.remove('open');
       panels.style.transform = ''; dim.style.opacity = 0;
-    } else { panels.style.transform = ''; dim.style.opacity = 0.75; }
+    } else {
+      panels.style.transform = ''; dim.style.opacity = 0.75;
+      /* Momentum scroll */
+      if (panelScrollMode && Math.abs(panelVelY) > 0.3) {
+        const momentum = panelVelY * 300;
+        panels.style.scrollBehavior = 'smooth';
+        panels.scrollTop -= momentum;
+        setTimeout(() => { panels.style.scrollBehavior = ''; }, 400);
+      }
+    }
   }
   mode = '';
 });
@@ -702,6 +736,7 @@ function initSwipe(row) {
   row._collapse = () => { if (expanded) collapse(); };
 
   let sy, lastPY, dirLocked = false, isVertical = false, ptrId = null;
+  let scrollVelY = 0, scrollPrevY = 0, scrollPrevT = 0;
 
   card.addEventListener('pointerdown', e => {
     if (e.target.closest('.exp-btn')) return;
@@ -755,6 +790,10 @@ function initSwipe(row) {
 
     if (isVertical) {
       /* Manual scroll: move panel by pointer delta */
+      const now = performance.now();
+      const dt = Math.max(1, now - scrollPrevT);
+      scrollVelY = (lastPY - e.clientY) / dt;
+      scrollPrevT = now;
       panels.scrollTop += (lastPY - e.clientY);
       lastPY = e.clientY;
       e.stopPropagation();
@@ -774,7 +813,17 @@ function initSwipe(row) {
   });
 
   card.addEventListener('pointerup', e => {
-    if (isVertical) { isVertical = false; dirLocked = false; e.stopPropagation(); return; }
+    if (isVertical) {
+      /* Momentum scroll on release */
+      if (Math.abs(scrollVelY) > 0.3) {
+        const momentum = scrollVelY * 300;
+        panels.style.scrollBehavior = 'smooth';
+        panels.scrollTop += momentum;
+        setTimeout(() => { panels.style.scrollBehavior = ''; }, 400);
+      }
+      isVertical = false; dirLocked = false; scrollVelY = 0;
+      e.stopPropagation(); return;
+    }
     if (justExpanded) { justExpanded = false; e.stopPropagation(); return; }
     if (expanded) { if (!e.target.closest('.exp-btn')) collapse(); e.stopPropagation(); return; }
     if (holding || pressT || lpT) { cancelHold(); drag = false; e.stopPropagation(); return; }
