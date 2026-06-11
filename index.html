@@ -177,6 +177,20 @@
   .notif-card.msg-open .msg-actions span { cursor: pointer; }
   .notif-row:has(.msg-open) { height: 160px; transition: height 250ms cubic-bezier(0.22,1,0.36,1); }
 
+  /* ── Drag-expand (pull down to reveal full text) ── */
+  .notif-card.drag-expandable { overflow: hidden; }
+  .notif-card.drag-expandable .drag-top {
+    display: flex; align-items: center; gap: 16px; width: 100%;
+  }
+  .notif-card.drag-expandable .drag-full {
+    display: block; font-size: 14px; font-weight: 400;
+    color: #6A6A6A; line-height: 18px; width: 100%;
+    max-height: 0; overflow: hidden; opacity: 0;
+  }
+  .notif-card.drag-expandable .notif-subtitle {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
   /* ── Stacked notification ── */
   .notif-stack { position: relative; flex-shrink: 0; margin-bottom: 20px; margin-top: 8px; }
   .stack-condensed { position: relative; padding-bottom: 6px; cursor: pointer; }
@@ -433,7 +447,7 @@
         </div>
       </div>
 
-      <!-- Gmail -->
+      <!-- Gmail: Sarah Chen -->
       <div class="notif-row">
         <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
         <div class="notif-card" data-app="Gmail">
@@ -444,6 +458,24 @@
           <div class="notif-text">
             <div class="notif-header"><span class="notif-name">Sarah Chen</span><span class="notif-time">12 m</span></div>
             <div class="notif-subtitle">Meeting tomorrow at 10am</div>
+          </div>
+          <div class="notif-expanded"><span class="exp-app-name">Gmail</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- Gmail: Drag-expand long email -->
+      <div class="notif-row">
+        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+        <div class="notif-card drag-expandable" data-app="Gmail">
+          <div class="drag-top">
+            <div class="notif-icon-wrap">
+              <div class="notif-icon" style="background:#EA4335"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#fff" stroke-width="1.8"/><path d="M22 6l-10 7L2 6" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            </div>
+            <div class="notif-text">
+              <div class="notif-header"><span class="notif-name">James Rivera</span><span class="notif-time">25 m</span></div>
+              <div class="notif-subtitle">Re: Project timeline update</div>
+              <div class="drag-full">Hey, just wanted to follow up on the timeline we discussed last week. I've moved the design review to Thursday since the dev team needs more time to finish the API integration. Also, the client asked if we could add a dashboard view before launch — I told them we'd scope it out. Can you check with your team and let me know if that's feasible by Friday?</div>
+            </div>
           </div>
           <div class="notif-expanded"><span class="exp-app-name">Gmail</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
         </div>
@@ -812,6 +844,45 @@ function initSwipe(row) {
   let sy, lastPY, dirLocked = false, isVertical = false, ptrId = null;
   let scrollVelY = 0, scrollPrevT = 0;
 
+  /* ── Drag-expand state ── */
+  const isDragExpandable = card.classList.contains('drag-expandable');
+  const dragFull = isDragExpandable ? card.querySelector('.drag-full') : null;
+  let dragExpanding = false, dragOpenAmt = 0;
+  const DRAG_CLOSED_H = 96, DRAG_OPEN_H = 200, DRAG_SNAP_THRESHOLD = 40;
+  let isDragOpen = false;
+
+  function setDragHeight(h) {
+    const clamped = Math.max(DRAG_CLOSED_H, Math.min(DRAG_OPEN_H, h));
+    card.style.height = clamped + 'px';
+    row.style.height = clamped + 'px';
+    /* Fade in the full text proportionally */
+    const progress = Math.max(0, (clamped - DRAG_CLOSED_H) / (DRAG_OPEN_H - DRAG_CLOSED_H));
+    if (dragFull) {
+      dragFull.style.maxHeight = (progress * 120) + 'px';
+      dragFull.style.opacity = progress;
+      dragFull.style.transition = 'none';
+    }
+    dragOpenAmt = clamped - DRAG_CLOSED_H;
+  }
+
+  function snapDragOpen() {
+    isDragOpen = true;
+    const SPR_D = '300ms cubic-bezier(0.22,1,0.36,1)';
+    card.style.transition = 'height ' + SPR_D; row.style.transition = 'height ' + SPR_D;
+    card.style.height = DRAG_OPEN_H + 'px'; row.style.height = DRAG_OPEN_H + 'px';
+    if (dragFull) { dragFull.style.transition = 'max-height 300ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease'; dragFull.style.maxHeight = '120px'; dragFull.style.opacity = '1'; }
+    card.classList.add('drag-open');
+  }
+
+  function snapDragClosed() {
+    isDragOpen = false;
+    const SPR_D = '300ms cubic-bezier(0.22,1,0.36,1)';
+    card.style.transition = 'height ' + SPR_D; row.style.transition = 'height ' + SPR_D;
+    card.style.height = DRAG_CLOSED_H + 'px'; row.style.height = DRAG_CLOSED_H + 'px';
+    if (dragFull) { dragFull.style.transition = 'max-height 300ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease'; dragFull.style.maxHeight = '0'; dragFull.style.opacity = '0'; }
+    card.classList.remove('drag-open');
+  }
+
   card.addEventListener('pointerdown', e => {
     if (e.target.closest('.exp-btn')) return;
     if (expanded) { e.stopPropagation(); return; }
@@ -822,10 +893,11 @@ function initSwipe(row) {
 
     drag = true; sx = e.clientX; sy = e.clientY; lastPY = e.clientY;
     st = performance.now();
-    dirLocked = false; isVertical = false; ptrId = e.pointerId;
+    dirLocked = false; isVertical = false; dragExpanding = false; ptrId = e.pointerId;
     scrollVelY = 0; scrollPrevT = performance.now();
     card.setPointerCapture(e.pointerId);
     instant();
+    if (isDragExpandable) { card.style.transition = 'none'; row.style.transition = 'none'; }
 
     pressT = setTimeout(() => {
       pressT = null; holding = true;
@@ -850,14 +922,31 @@ function initSwipe(row) {
   });
 
   card.addEventListener('pointermove', e => {
-    if (!drag && !isVertical) return;
+    if (!drag && !isVertical && !dragExpanding) return;
     const adx = Math.abs(e.clientX - sx), ady = Math.abs(e.clientY - sy);
 
     /* Lock direction once after 6px */
     if (!dirLocked && (adx > 6 || ady > 6)) {
       dirLocked = true;
       isVertical = ady > adx;
-      if (isVertical) { cancelHold(); drag = false; }
+      if (isVertical) {
+        cancelHold();
+        drag = false;
+        /* If drag-expandable and pulling DOWN (or already open and pulling UP), enter drag-expand mode */
+        const dy = e.clientY - sy;
+        if (isDragExpandable && (dy > 0 || isDragOpen)) {
+          dragExpanding = true;
+        }
+      }
+    }
+
+    /* Drag-expand: follow finger */
+    if (dragExpanding) {
+      const dy = e.clientY - sy;
+      const baseH = isDragOpen ? DRAG_OPEN_H : DRAG_CLOSED_H;
+      setDragHeight(baseH + dy);
+      e.stopPropagation();
+      return;
     }
 
     if (isVertical) {
@@ -884,6 +973,22 @@ function initSwipe(row) {
   });
 
   card.addEventListener('pointerup', e => {
+    /* Drag-expand release: snap open or closed */
+    if (dragExpanding) {
+      dragExpanding = false;
+      if (isDragOpen) {
+        /* Was open — snap closed if pulled up enough */
+        if (dragOpenAmt < (DRAG_OPEN_H - DRAG_CLOSED_H) - DRAG_SNAP_THRESHOLD) snapDragClosed();
+        else snapDragOpen();
+      } else {
+        /* Was closed — snap open if pulled down enough */
+        if (dragOpenAmt > DRAG_SNAP_THRESHOLD) snapDragOpen();
+        else snapDragClosed();
+      }
+      dirLocked = false; isVertical = false;
+      e.stopPropagation(); return;
+    }
+
     if (isVertical) {
       /* Momentum on release */
       if (Math.abs(scrollVelY) > 0.3) {
