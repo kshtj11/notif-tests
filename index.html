@@ -839,24 +839,26 @@ function initSwipe(row) {
     instant();
     if (isDragExpandable) { card.style.transition = 'none'; row.style.transition = 'none'; if (dragFull) dragFull.style.transition = 'none'; }
 
-    pressT = setTimeout(() => {
-      pressT = null; holding = true;
-      card.style.transition = 'transform 250ms cubic-bezier(0.25,1,0.5,1)';
-      card.style.transform = 'translateX(0) scale(0.96)';
-    }, 60);
+    if (!isDragExpandable) {
+      pressT = setTimeout(() => {
+        pressT = null; holding = true;
+        card.style.transition = 'transform 250ms cubic-bezier(0.25,1,0.5,1)';
+        card.style.transform = 'translateX(0) scale(0.96)';
+      }, 60);
 
-    lpT = setTimeout(() => {
-      lpT = null;
-      if (!holding) return;
-      holding = false; drag = false; justExpanded = true;
-      card.style.transition = 'transform 200ms cubic-bezier(0.22,1,0.36,1)';
-      card.style.transform = 'translateX(0) scale(1.04)';
-      setTimeout(() => {
-        card.style.transition = 'transform 180ms cubic-bezier(0.25,1,0.5,1)';
-        card.style.transform = 'translateX(0) scale(1)';
-        setTimeout(expand, 80);
-      }, 180);
-    }, 500);
+      lpT = setTimeout(() => {
+        lpT = null;
+        if (!holding) return;
+        holding = false; drag = false; justExpanded = true;
+        card.style.transition = 'transform 200ms cubic-bezier(0.22,1,0.36,1)';
+        card.style.transform = 'translateX(0) scale(1.04)';
+        setTimeout(() => {
+          card.style.transition = 'transform 180ms cubic-bezier(0.25,1,0.5,1)';
+          card.style.transform = 'translateX(0) scale(1)';
+          setTimeout(expand, 80);
+        }, 180);
+      }, 500);
+    }
 
     e.stopPropagation();
   });
@@ -865,8 +867,9 @@ function initSwipe(row) {
     if (!drag && !isVertical && !dragExpanding) return;
     const adx = Math.abs(e.clientX - sx), ady = Math.abs(e.clientY - sy);
 
-    /* Lock direction once after 6px */
-    if (!dirLocked && (adx > 6 || ady > 6)) {
+    /* Lock direction — lower threshold for drag-expandable cards */
+    const lockPx = isDragExpandable ? 3 : 6;
+    if (!dirLocked && (adx > lockPx || ady > lockPx)) {
       dirLocked = true;
       isVertical = ady > adx;
       if (isVertical) {
