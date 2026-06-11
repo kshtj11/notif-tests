@@ -716,12 +716,15 @@ function initSwipe(row) {
   const DRAG_CLOSED_H = 96, DRAG_SNAP_THRESHOLD = 40;
   /* Measure natural expanded height by temporarily revealing content */
   let DRAG_OPEN_H = 200;
-  if (isDragExpandable) {
-    card.style.height = 'auto'; card.style.position = 'absolute'; card.style.visibility = 'hidden';
-    if (dragFull) { dragFull.style.maxHeight = 'none'; dragFull.style.opacity = '1'; }
-    DRAG_OPEN_H = card.scrollHeight;
-    card.style.height = DRAG_CLOSED_H + 'px'; card.style.position = ''; card.style.visibility = '';
-    if (dragFull) { dragFull.style.maxHeight = '0'; dragFull.style.opacity = '0'; }
+  if (isDragExpandable && dragFull) {
+    /* Measure off-screen: clone, reveal, read, discard */
+    const clone = card.cloneNode(true);
+    clone.style.cssText = 'position:absolute;visibility:hidden;height:auto;width:' + card.offsetWidth + 'px;padding:' + getComputedStyle(card).padding;
+    const cf = clone.querySelector('.drag-full');
+    if (cf) { cf.style.maxHeight = 'none'; cf.style.opacity = '1'; }
+    card.parentNode.appendChild(clone);
+    DRAG_OPEN_H = clone.scrollHeight;
+    clone.remove();
   }
   let isDragOpen = false;
 
