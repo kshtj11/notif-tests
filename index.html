@@ -872,6 +872,9 @@ function initSwipe(row) {
         if (isDragExpandable && (dy > 0 || isDragOpen)) {
           dragExpanding = true;
         }
+      } else if (isDragExpandable && isDragOpen) {
+        /* Horizontal swipe on expanded card — collapse first */
+        snapDragClosed();
       }
     }
 
