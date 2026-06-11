@@ -12,7 +12,7 @@
   body {
     background: #000;
     display: flex; justify-content: center; align-items: center;
-    touch-action: none; user-select: none;
+    user-select: none;
     font-family: 'Sora', system-ui, sans-serif;
   }
 
@@ -26,6 +26,7 @@
     position: absolute; inset: 0; z-index: 1;
     display: flex; flex-direction: column; align-items: center;
     padding-top: 80px; gap: 24px;
+    touch-action: none;
   }
   .widget { border-radius: 16px; background: rgba(255,255,255,0.06); }
   .widget-a { width: 320px; height: 100px; }
@@ -93,7 +94,6 @@
     display: flex; align-items: center;
     padding: 0 10px 0 20px; gap: 16px;
     z-index: 2; will-change: transform; cursor: grab;
-    touch-action: pan-y;
   }
 
   /* ── Icon ── */
@@ -213,6 +213,7 @@
   #swipe-zone {
     position: absolute; bottom: 0; left: 0;
     width: 540px; height: 64px; z-index: 12;
+    touch-action: none;
   }
 </style>
 </head>
@@ -700,7 +701,7 @@ function initSwipe(row) {
   row._close = () => { spring(); doClose(); };
   row._collapse = () => { if (expanded) collapse(); };
 
-  let sy, dirLocked = false, isVertical = false, ptrId = null;
+  let sy, lastPY, dirLocked = false, isVertical = false, ptrId = null;
 
   card.addEventListener('pointerdown', e => {
     if (e.target.closest('.exp-btn')) return;
@@ -710,9 +711,10 @@ function initSwipe(row) {
     if (openRow && openRow !== row) { openRow._close(); openRow = null; }
     if (expandedRow && expandedRow !== row) { expandedRow._collapse(); }
 
-    drag = true; sx = e.clientX; sy = e.clientY; st = performance.now();
+    drag = true; sx = e.clientX; sy = e.clientY; lastPY = e.clientY;
+    st = performance.now();
     dirLocked = false; isVertical = false; ptrId = e.pointerId;
-    /* DON'T capture yet — wait for horizontal lock */
+    card.setPointerCapture(e.pointerId);
     instant();
 
     pressT = setTimeout(() => {
@@ -733,10 +735,12 @@ function initSwipe(row) {
         setTimeout(expand, 80);
       }, 180);
     }, 500);
+
+    e.stopPropagation();
   });
 
   card.addEventListener('pointermove', e => {
-    if (!drag) return;
+    if (!drag && !isVertical) return;
     const adx = Math.abs(e.clientX - sx), ady = Math.abs(e.clientY - sy);
 
     /* Lock direction after 6px of movement */
@@ -744,14 +748,19 @@ function initSwipe(row) {
       dirLocked = true;
       isVertical = ady > adx;
       if (isVertical) {
-        /* Vertical = scroll: cancel everything, let panel scroll */
-        cancelHold(); drag = false; ptrId = null;
-        return;
+        cancelHold(); drag = false;
+        /* keep pointer captured so we can manually scroll */
       }
-      /* Horizontal confirmed — NOW capture pointer */
-      try { card.setPointerCapture(ptrId); } catch(_){}
     }
-    if (!dirLocked || isVertical) return;
+
+    if (isVertical) {
+      /* Manual scroll: move panel by pointer delta */
+      panels.scrollTop += (lastPY - e.clientY);
+      lastPY = e.clientY;
+      e.stopPropagation();
+      return;
+    }
+    if (!dirLocked) return;
 
     if ((pressT || lpT || holding) && adx > 8) {
       cancelHold(); card.style.transition = 'none';
@@ -765,6 +774,7 @@ function initSwipe(row) {
   });
 
   card.addEventListener('pointerup', e => {
+    if (isVertical) { isVertical = false; dirLocked = false; e.stopPropagation(); return; }
     if (justExpanded) { justExpanded = false; e.stopPropagation(); return; }
     if (expanded) { if (!e.target.closest('.exp-btn')) collapse(); e.stopPropagation(); return; }
     if (holding || pressT || lpT) { cancelHold(); drag = false; e.stopPropagation(); return; }
