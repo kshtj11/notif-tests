@@ -169,6 +169,7 @@
   .notif-card.drag-expandable .notif-subtitle {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
+  .notif-card.drag-expandable.drag-open .notif-badge { display: none; }
   .drag-actions {
     display: flex; justify-content: center; align-items: center;
     gap: 95px; width: 100%; margin-top: 12px;
@@ -784,6 +785,7 @@ function initSwipe(row) {
   /* ── Drag-expand state ── */
   const isDragExpandable = card.classList.contains('drag-expandable');
   const dragFull = isDragExpandable ? card.querySelector('.drag-full') : null;
+  const dragBadge = isDragExpandable ? card.querySelector('.notif-badge') : null;
   let dragExpanding = false, dragOpenAmt = 0;
   const DRAG_CLOSED_H = 96, DRAG_OPEN_H = 200, DRAG_SNAP_THRESHOLD = 40;
   let isDragOpen = false;
@@ -801,6 +803,7 @@ function initSwipe(row) {
         dragFull.style.maxHeight = (progress * 120) + 'px';
         dragFull.style.opacity = progress;
       }
+      if (dragBadge) dragBadge.style.opacity = 1 - progress;
       dragOpenAmt = clamped - DRAG_CLOSED_H;
     });
   }
