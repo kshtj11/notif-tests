@@ -211,10 +211,6 @@
   #dock-bar svg { display: block; }
 
   /* ── Behind-dock peek ── */
-  .notif-row.behind-dock .notif-card {
-    background: #222222;
-  }
-  .notif-row.behind-dock .notif-card * { visibility: hidden; }
 
   /* ── Swipe zone (invisible, home screen) ── */
   #swipe-zone {
@@ -917,17 +913,7 @@ panels.addEventListener('click', e => {
 /* ── Behind-dock wireframe detection ── */
 const dockBar = document.getElementById('dock-bar');
 function updateBehindDock() {
-  const dockTop = dockBar.getBoundingClientRect().top;
-  document.querySelectorAll('.notif-row').forEach(row => {
-    const rect = row.getBoundingClientRect();
-    /* If less than 60px of the card is visible above the dock, it's "behind" */
-    const visibleAboveDock = dockTop - rect.top;
-    if (rect.bottom > dockTop && visibleAboveDock < 60) {
-      row.classList.add('behind-dock');
-    } else {
-      row.classList.remove('behind-dock');
-    }
-  });
+  /* no-op for now */
 }
 panels.addEventListener('scroll', updateBehindDock);
 /* Run once when panel opens */
