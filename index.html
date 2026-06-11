@@ -527,6 +527,8 @@ const zone   = document.getElementById('swipe-zone');
 /* ── Panel slide-up / dismiss ── */
 let tracking = false, startY = 0, startT = 0, lastY = 0, lastT = 0;
 let mode = '', justOpened = false;
+/* Panel-drag state */
+let pdLocked = false, pdAction = '', pdLastY = 0, pdVelY = 0, pdPrevT = 0, pdStartTop = 0;
 
 zone.addEventListener('pointerdown', e => {
   if (panels.classList.contains('open')) return;
@@ -535,19 +537,20 @@ zone.addEventListener('pointerdown', e => {
   frame.setPointerCapture(e.pointerId);
   panels.style.transition = 'none';
 });
-let panelScrollMode = false, panelLastPY = 0, panelVelY = 0, panelPrevY = 0, panelPrevT = 0;
 
 panels.addEventListener('pointerdown', e => {
   if (!panels.classList.contains('open')) return;
-  if (e.target.closest('.notif-row') || e.target.closest('.options-menu') || e.target.closest('.menu-backdrop')) return;
-  /* Start as scroll; only switch to dismiss if at top + pulling down */
-  panelScrollMode = true; panelLastPY = e.clientY;
-  panelVelY = 0; panelPrevY = e.clientY; panelPrevT = performance.now();
+  if (e.target.closest('.notif-row') || e.target.closest('.notif-stack') ||
+      e.target.closest('.options-menu') || e.target.closest('.menu-backdrop')) return;
   tracking = true; mode = 'panel-drag';
   startY = lastY = e.clientY; startT = lastT = performance.now();
+  pdLocked = false; pdAction = ''; pdLastY = e.clientY;
+  pdVelY = 0; pdPrevT = performance.now();
+  pdStartTop = panels.scrollTop;
   frame.setPointerCapture(e.pointerId);
   panels.style.transition = 'none';
 });
+
 frame.addEventListener('pointermove', e => {
   if (!tracking) return;
   lastY = e.clientY; lastT = performance.now();
@@ -560,33 +563,39 @@ frame.addEventListener('pointermove', e => {
       dim.style.opacity = f * 0.75;
     }
   } else if (mode === 'panel-drag') {
-    const dy = e.clientY - panelPrevY;
-    const dt = Math.max(1, performance.now() - panelPrevT);
-    panelVelY = dy / dt;
-    panelPrevY = e.clientY; panelPrevT = performance.now();
+    /* Lock direction once after 8px of movement */
+    if (!pdLocked) {
+      const moved = Math.abs(e.clientY - startY);
+      if (moved > 8) {
+        pdLocked = true;
+        const goingDown = e.clientY > startY;
+        /* Only dismiss if we started at the very top AND first move is downward */
+        pdAction = (pdStartTop <= 0 && goingDown) ? 'dismiss' : 'scroll';
+      } else return;
+    }
 
-    const atTop = panels.scrollTop <= 0;
-    const pullingDown = e.clientY - startY > 0;
+    /* Track velocity */
+    const now = performance.now();
+    const dt = Math.max(1, now - pdPrevT);
+    pdVelY = (pdLastY - e.clientY) / dt;
+    pdPrevT = now;
 
-    if (atTop && pullingDown && panels.scrollTop <= 0) {
-      /* Switch to dismiss mode */
-      panelScrollMode = false;
+    if (pdAction === 'dismiss') {
       const dismissDy = Math.max(0, e.clientY - startY);
       panels.style.transform = `translateY(${dismissDy}px)`;
       dim.style.opacity = Math.max(0, 0.75 * (1 - dismissDy / 620));
     } else {
-      /* Scroll the panel */
-      panelScrollMode = true;
-      panels.scrollTop += (panelLastPY - e.clientY);
-      panels.style.transform = ''; dim.style.opacity = 0.75;
+      panels.scrollTop += (pdLastY - e.clientY);
     }
-    panelLastPY = e.clientY;
+    pdLastY = e.clientY;
   }
 });
+
 frame.addEventListener('pointerup', e => {
   if (!tracking) return;
   tracking = false;
   panels.style.transition = '';
+
   if (mode === 'open') {
     const up = startY - e.clientY;
     const vel = (lastT - startT) > 0 ? up / (lastT - startT) : 0;
@@ -596,24 +605,24 @@ frame.addEventListener('pointerup', e => {
       justOpened = true; requestAnimationFrame(() => { justOpened = false; });
     } else { panels.style.transform = ''; dim.style.opacity = 0; }
   } else if (mode === 'panel-drag') {
-    const pullDown = e.clientY - startY;
-    if (!panelScrollMode && panels.scrollTop <= 0 && pullDown > 90) {
+    if (pdAction === 'dismiss' && (e.clientY - startY) > 90) {
       hideMenu();
       panels.classList.remove('open');
       panels.style.transform = ''; dim.style.opacity = 0;
     } else {
       panels.style.transform = ''; dim.style.opacity = 0.75;
       /* Momentum scroll */
-      if (panelScrollMode && Math.abs(panelVelY) > 0.3) {
-        const momentum = panelVelY * 300;
+      if (pdAction === 'scroll' && Math.abs(pdVelY) > 0.3) {
+        const momentum = pdVelY * 300;
         panels.style.scrollBehavior = 'smooth';
-        panels.scrollTop -= momentum;
+        panels.scrollTop += momentum;
         setTimeout(() => { panels.style.scrollBehavior = ''; }, 400);
       }
     }
   }
   mode = '';
 });
+
 frame.addEventListener('click', e => {
   if (!panels.classList.contains('open') || justOpened) return;
   if (panels.contains(e.target) || zone.contains(e.target)) return;
@@ -736,7 +745,8 @@ function initSwipe(row) {
   row._collapse = () => { if (expanded) collapse(); };
 
   let sy, lastPY, dirLocked = false, isVertical = false, ptrId = null;
-  let scrollVelY = 0, scrollPrevY = 0, scrollPrevT = 0;
+  let scrollVelY = 0, scrollPrevT = 0;
+  let cardVAction = '', cardStartTop = 0;
 
   card.addEventListener('pointerdown', e => {
     if (e.target.closest('.exp-btn')) return;
@@ -749,6 +759,7 @@ function initSwipe(row) {
     drag = true; sx = e.clientX; sy = e.clientY; lastPY = e.clientY;
     st = performance.now();
     dirLocked = false; isVertical = false; ptrId = e.pointerId;
+    cardVAction = ''; cardStartTop = panels.scrollTop;
     card.setPointerCapture(e.pointerId);
     instant();
 
@@ -784,17 +795,25 @@ function initSwipe(row) {
       isVertical = ady > adx;
       if (isVertical) {
         cancelHold(); drag = false;
-        /* keep pointer captured so we can manually scroll */
+        const goingDown = e.clientY > sy;
+        cardVAction = (cardStartTop <= 0 && goingDown) ? 'dismiss' : 'scroll';
+        if (cardVAction === 'dismiss') panels.style.transition = 'none';
       }
     }
 
     if (isVertical) {
-      /* Manual scroll: move panel by pointer delta */
       const now = performance.now();
       const dt = Math.max(1, now - scrollPrevT);
       scrollVelY = (lastPY - e.clientY) / dt;
       scrollPrevT = now;
-      panels.scrollTop += (lastPY - e.clientY);
+
+      if (cardVAction === 'dismiss') {
+        const dismissDy = Math.max(0, e.clientY - sy);
+        panels.style.transform = `translateY(${dismissDy}px)`;
+        dim.style.opacity = Math.max(0, 0.75 * (1 - dismissDy / 620));
+      } else {
+        panels.scrollTop += (lastPY - e.clientY);
+      }
       lastPY = e.clientY;
       e.stopPropagation();
       return;
@@ -814,14 +833,22 @@ function initSwipe(row) {
 
   card.addEventListener('pointerup', e => {
     if (isVertical) {
-      /* Momentum scroll on release */
-      if (Math.abs(scrollVelY) > 0.3) {
+      if (cardVAction === 'dismiss') {
+        panels.style.transition = '';
+        if ((e.clientY - sy) > 90) {
+          hideMenu();
+          panels.classList.remove('open');
+          panels.style.transform = ''; dim.style.opacity = 0;
+        } else {
+          panels.style.transform = ''; dim.style.opacity = 0.75;
+        }
+      } else if (Math.abs(scrollVelY) > 0.3) {
         const momentum = scrollVelY * 300;
         panels.style.scrollBehavior = 'smooth';
         panels.scrollTop += momentum;
         setTimeout(() => { panels.style.scrollBehavior = ''; }, 400);
       }
-      isVertical = false; dirLocked = false; scrollVelY = 0;
+      isVertical = false; dirLocked = false; scrollVelY = 0; cardVAction = '';
       e.stopPropagation(); return;
     }
     if (justExpanded) { justExpanded = false; e.stopPropagation(); return; }
