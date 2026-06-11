@@ -54,8 +54,9 @@
     transition: transform 0.26s cubic-bezier(0.22,1,0.36,1);
     background: #0D0D0D;
   }
-  #panels.open { transform: translateY(0); }
-  .notif-list { padding: 48px 0 0; display: flex; flex-direction: column; }
+  #panels.open { transform: translateY(0); overflow-y: auto; scrollbar-width: none; touch-action: pan-y; }
+  #panels::-webkit-scrollbar { display: none; }
+  .notif-list { padding: 190px 0 80px; display: flex; flex-direction: column; }
 
   /* ── Row ── */
   .notif-row {
@@ -92,6 +93,7 @@
     display: flex; align-items: center;
     padding: 0 10px 0 20px; gap: 16px;
     z-index: 2; will-change: transform; cursor: grab;
+    touch-action: pan-y;
   }
 
   /* ── Icon ── */
@@ -197,15 +199,20 @@
     border-top: 1px solid rgba(255,255,255,0.06);
   }
 
-  /* ── Swipe zone ── */
-  #swipe-zone {
-    position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
-    width: 120px; height: 16px; z-index: 31;
+  /* ── Dock bar ── */
+  #dock-bar {
+    position: sticky; bottom: 0; left: 0;
+    width: 540px; height: 64px; z-index: 31;
+    background: #000;
     display: flex; justify-content: center; align-items: center;
+    flex-shrink: 0;
   }
-  #swipe-zone::after {
-    content: ''; width: 48px; height: 4px; border-radius: 2px;
-    background: rgba(255,255,255,0.18);
+  #dock-bar svg { display: block; }
+
+  /* ── Swipe zone (invisible, home screen) ── */
+  #swipe-zone {
+    position: absolute; bottom: 0; left: 0;
+    width: 540px; height: 64px; z-index: 12;
   }
 </style>
 </head>
@@ -373,6 +380,138 @@
         </div>
       </div>
 
+      <!-- Instagram -->
+      <div class="notif-row">
+        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+        <div class="notif-card" data-app="Instagram">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon" style="background:#E1306C"><svg viewBox="0 0 24 24" fill="none"><rect x="2" y="2" width="20" height="20" rx="5" stroke="#fff" stroke-width="1.8"/><circle cx="12" cy="12" r="5" stroke="#fff" stroke-width="1.8"/><circle cx="17.5" cy="6.5" r="1.5" fill="#fff"/></svg></div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header"><span class="notif-name">Alex</span><span class="notif-time">5 m</span></div>
+            <div class="notif-subtitle">Liked your photo</div>
+          </div>
+          <div class="notif-expanded"><span class="exp-app-name">Instagram</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- Gmail -->
+      <div class="notif-row">
+        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+        <div class="notif-card" data-app="Gmail">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon" style="background:#EA4335"><svg viewBox="0 0 24 24" fill="none"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" stroke="#fff" stroke-width="1.8"/><path d="M22 6l-10 7L2 6" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div class="notif-badge">3</div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header"><span class="notif-name">Sarah Chen</span><span class="notif-time">12 m</span></div>
+            <div class="notif-subtitle">Meeting tomorrow at 10am</div>
+          </div>
+          <div class="notif-expanded"><span class="exp-app-name">Gmail</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- Spotify -->
+      <div class="notif-row">
+        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+        <div class="notif-card" data-app="Spotify">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon" style="background:#1DB954"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#fff" stroke-width="1.8"/><path d="M8 15s1.5-1 4-1 4 1 4 1M7 11.5s2-1.5 5-1.5 5 1.5 5 1.5M6 8s2.5-2 6-2 6 2 6 2" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header"><span class="notif-name">Spotify</span><span class="notif-time">20 m</span></div>
+            <div class="notif-subtitle">Your Daily Mix is ready</div>
+          </div>
+          <div class="notif-expanded"><span class="exp-app-name">Spotify</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- X / Twitter -->
+      <div class="notif-row">
+        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+        <div class="notif-card" data-app="X">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon" style="background:#1DA1F2"><svg viewBox="0 0 24 24" fill="none"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header"><span class="notif-name">@musicfan</span><span class="notif-time">30 m</span></div>
+            <div class="notif-subtitle">Started following you</div>
+          </div>
+          <div class="notif-expanded"><span class="exp-app-name">X</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- Uber -->
+      <div class="notif-row">
+        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+        <div class="notif-card" data-app="Uber">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon" style="background:#000"><svg viewBox="0 0 24 24" fill="none"><path d="M12 2L4 7v10l8 5 8-5V7l-8-5z" stroke="#fff" stroke-width="1.8" stroke-linejoin="round"/></svg></div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header"><span class="notif-name">Uber</span><span class="notif-time">45 m</span></div>
+            <div class="notif-subtitle">Your ride is arriving</div>
+          </div>
+          <div class="notif-expanded"><span class="exp-app-name">Uber</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- YouTube -->
+      <div class="notif-row">
+        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+        <div class="notif-card" data-app="YouTube">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon" style="background:#FF0000"><svg viewBox="0 0 24 24" fill="none"><polygon points="10,8 16,12 10,16" fill="#fff"/></svg></div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header"><span class="notif-name">MKBHD</span><span class="notif-time">1 h</span></div>
+            <div class="notif-subtitle">Uploaded: New phone review</div>
+          </div>
+          <div class="notif-expanded"><span class="exp-app-name">YouTube</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- Slack -->
+      <div class="notif-row">
+        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+        <div class="notif-card" data-app="Slack">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon" style="background:#4A154B"><svg viewBox="0 0 24 24" fill="none"><path d="M14.5 10c-.83 0-1.5-.67-1.5-1.5v-5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5zM20.5 10H19v-1.5c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM9.5 14c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5S8 21.33 8 20.5v-5c0-.83.67-1.5 1.5-1.5zM3.5 14H5v1.5c0 .83-.67 1.5-1.5 1.5S2 16.33 2 15.5 2.67 14 3.5 14z" stroke="#fff" stroke-width="1.3"/></svg></div>
+            <div class="notif-badge">5</div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header"><span class="notif-name">#general</span><span class="notif-time">1 h</span></div>
+            <div class="notif-subtitle">Mike: Anyone free for lunch?</div>
+          </div>
+          <div class="notif-expanded"><span class="exp-app-name">Slack</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="notif-row">
+        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+        <div class="notif-card" data-app="Calendar">
+          <div class="notif-icon-wrap">
+            <div class="notif-icon" style="background:#4285F4"><svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="#fff" stroke-width="1.8"/><path d="M16 2v4M8 2v4M3 10h18" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+          </div>
+          <div class="notif-text">
+            <div class="notif-header"><span class="notif-name">Calendar</span><span class="notif-time">3 h</span></div>
+            <div class="notif-subtitle">Reminder: Dentist at 3pm</div>
+          </div>
+          <div class="notif-expanded"><span class="exp-app-name">Calendar</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+        </div>
+      </div>
+
+    </div>
+    <div id="dock-bar">
+      <svg width="179" height="20" viewBox="0 0 179 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M42 16L47.4274 10.4032C49.7187 8.04024 48.0959 4 44.8554 4H39.1446C35.9041 4 34.2813 8.04024 36.5726 10.4032L42 16Z" fill="#525252"/>
+        <circle cx="66.5" cy="10" r="6" fill="#525252"/>
+        <rect x="84.5" y="4" width="12" height="12" fill="#525252"/>
+        <path d="M108.5 9.5C108.5 6.46243 110.962 4 114 4C117.038 4 119.5 6.46243 119.5 9.5V16H108.5V9.5Z" fill="#D9D9D9"/>
+        <path d="M131.5 4H143.5V8.43193H131.5V4Z" fill="#525252"/>
+        <path d="M131.5 11.5681H143.5V16H131.5V11.5681Z" fill="#525252"/>
+      </svg>
     </div>
   </div>
   <div id="swipe-zone"></div>
@@ -561,6 +700,8 @@ function initSwipe(row) {
   row._close = () => { spring(); doClose(); };
   row._collapse = () => { if (expanded) collapse(); };
 
+  let sy, dirLocked = false, isVertical = false, ptrId = null;
+
   card.addEventListener('pointerdown', e => {
     if (e.target.closest('.exp-btn')) return;
     if (expanded) { e.stopPropagation(); return; }
@@ -569,8 +710,9 @@ function initSwipe(row) {
     if (openRow && openRow !== row) { openRow._close(); openRow = null; }
     if (expandedRow && expandedRow !== row) { expandedRow._collapse(); }
 
-    drag = true; sx = e.clientX; st = performance.now();
-    card.setPointerCapture(e.pointerId);
+    drag = true; sx = e.clientX; sy = e.clientY; st = performance.now();
+    dirLocked = false; isVertical = false; ptrId = e.pointerId;
+    /* DON'T capture yet — wait for horizontal lock */
     instant();
 
     pressT = setTimeout(() => {
@@ -591,13 +733,27 @@ function initSwipe(row) {
         setTimeout(expand, 80);
       }, 180);
     }, 500);
-
-    e.stopPropagation();
   });
 
   card.addEventListener('pointermove', e => {
     if (!drag) return;
-    if ((pressT || lpT || holding) && Math.abs(e.clientX - sx) > 8) {
+    const adx = Math.abs(e.clientX - sx), ady = Math.abs(e.clientY - sy);
+
+    /* Lock direction after 6px of movement */
+    if (!dirLocked && (adx > 6 || ady > 6)) {
+      dirLocked = true;
+      isVertical = ady > adx;
+      if (isVertical) {
+        /* Vertical = scroll: cancel everything, let panel scroll */
+        cancelHold(); drag = false; ptrId = null;
+        return;
+      }
+      /* Horizontal confirmed — NOW capture pointer */
+      try { card.setPointerCapture(ptrId); } catch(_){}
+    }
+    if (!dirLocked || isVertical) return;
+
+    if ((pressT || lpT || holding) && adx > 8) {
       cancelHold(); card.style.transition = 'none';
     }
     if (!holding) {
