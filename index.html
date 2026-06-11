@@ -153,12 +153,12 @@
   .exp-btn svg { width: 20px; height: 20px; }
 
   /* ── Stacked notification ── */
-  .notif-stack { position: relative; flex-shrink: 0; margin-bottom: 12px; }
+  .notif-stack { position: relative; flex-shrink: 0; margin-bottom: 20px; margin-top: 8px; }
   .stack-condensed { position: relative; padding-bottom: 6px; cursor: pointer; }
   .stack-condensed .notif-row { margin-bottom: 0; }
   .stack-peek {
     position: absolute; bottom: 0;
-    left: 38px; width: 464px; height: 12px;
+    left: 38px; width: 464px; height: 14px;
     background: #222222; border-radius: 0 0 12px 12px;
   }
   .stack-front { background: #303030 !important; }
@@ -430,18 +430,70 @@
         </div>
       </div>
 
-      <!-- X / Twitter -->
-      <div class="notif-row">
-        <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
-        <div class="notif-card" data-app="X">
-          <div class="notif-icon-wrap">
-            <div class="notif-icon" style="background:#1DA1F2"><svg viewBox="0 0 24 24" fill="none"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <!-- X / Twitter Stack -->
+      <div class="notif-stack" id="x-stack">
+        <div class="stack-condensed">
+          <div class="stack-peek"></div>
+          <div class="notif-row">
+            <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+            <div class="notif-card stack-front" data-app="X">
+              <div class="notif-icon-wrap">
+                <div class="notif-avatar" style="background:#1DA1F2"></div>
+                <div class="notif-badge stack-badge">3</div>
+                <div class="app-mini"><svg viewBox="0 0 24 24" fill="none"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              </div>
+              <div class="notif-text">
+                <div class="notif-header"><span class="notif-name">@musicfan</span><span class="notif-time">30 m</span></div>
+                <div class="notif-subtitle">Started following you</div>
+              </div>
+              <div class="notif-expanded"><span class="exp-app-name">X</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+            </div>
           </div>
-          <div class="notif-text">
-            <div class="notif-header"><span class="notif-name">@musicfan</span><span class="notif-time">30 m</span></div>
-            <div class="notif-subtitle">Started following you</div>
+        </div>
+        <div class="stack-expanded">
+          <div class="stack-label">X</div>
+          <div class="notif-row">
+            <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+            <div class="notif-card" data-app="X">
+              <div class="notif-icon-wrap">
+                <div class="notif-avatar" style="background:#1DA1F2"></div>
+                <div class="app-mini"><svg viewBox="0 0 24 24" fill="none"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              </div>
+              <div class="notif-text">
+                <div class="notif-header"><span class="notif-name">@musicfan</span><span class="notif-time">30 m</span></div>
+                <div class="notif-subtitle">Started following you</div>
+              </div>
+              <div class="notif-expanded"><span class="exp-app-name">X</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+            </div>
           </div>
-          <div class="notif-expanded"><span class="exp-app-name">X</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+          <div class="notif-row">
+            <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+            <div class="notif-card" data-app="X">
+              <div class="notif-icon-wrap">
+                <div class="notif-avatar" style="background:#1DA1F2"></div>
+                <div class="app-mini"><svg viewBox="0 0 24 24" fill="none"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              </div>
+              <div class="notif-text">
+                <div class="notif-header"><span class="notif-name">@indieheads</span><span class="notif-time">45 m</span></div>
+                <div class="notif-subtitle">Retweeted your post</div>
+              </div>
+              <div class="notif-expanded"><span class="exp-app-name">X</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+            </div>
+          </div>
+          <div class="notif-row">
+            <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
+            <div class="notif-card" data-app="X">
+              <div class="notif-icon-wrap">
+                <div class="notif-avatar" style="background:#1DA1F2"></div>
+                <div class="app-mini"><svg viewBox="0 0 24 24" fill="none"><path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              </div>
+              <div class="notif-text">
+                <div class="notif-header"><span class="notif-name">@techcrunch</span><span class="notif-time">1 h</span></div>
+                <div class="notif-subtitle">Liked your reply</div>
+              </div>
+              <div class="notif-expanded"><span class="exp-app-name">X</span><div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="exp-btn exp-settings"><svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#fff" stroke-width="1.5"/></svg></div></div>
+            </div>
+          </div>
         </div>
       </div>
 
