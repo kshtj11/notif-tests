@@ -171,10 +171,12 @@
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .notif-card.drag-expandable.drag-open .notif-badge { display: none; }
+  .notif-card.drag-expandable { flex-direction: column; }
   .drag-actions {
     display: flex; justify-content: center; align-items: center;
-    gap: 95px; width: 100%; margin-top: 12px;
+    gap: 95px; width: 100%;
     font-size: 15px; font-weight: 600; color: #fff;
+    max-height: 0; overflow: hidden; opacity: 0;
   }
   .drag-actions span { cursor: pointer; }
 
@@ -314,9 +316,10 @@
                 <span class="notif-time">2 mins</span>
               </div>
               <div class="notif-subtitle">I know the end</div>
-              <div class="drag-full">That is a song i wrote<br>yes it indeed is<div class="drag-actions"><span>Reply</span><span style="color:#6A6A6A">|</span><span>Mute</span></div></div>
+              <div class="drag-full">That is a song i wrote<br>yes it indeed is</div>
             </div>
           </div>
+          <div class="drag-actions"><span>Reply</span><span style="color:#6A6A6A">|</span><span>Mute</span></div>
           <div class="notif-expanded">
             <span class="exp-app-name">WhatsApp</span>
             <div class="exp-btn exp-bell"><svg viewBox="0 0 24 24" fill="none"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9z" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M13.73 21a2 2 0 01-3.46 0" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -711,6 +714,7 @@ function initSwipe(row) {
   /* ── Drag-expand state ── */
   const isDragExpandable = card.classList.contains('drag-expandable');
   const dragFull = isDragExpandable ? card.querySelector('.drag-full') : null;
+  const dragActs = isDragExpandable ? card.querySelector('.drag-actions') : null;
   const dragBadge = isDragExpandable ? card.querySelector('.notif-badge') : null;
   let dragExpanding = false, dragOpenAmt = 0;
   const DRAG_CLOSED_H = 96, DRAG_SNAP_THRESHOLD = 40;
@@ -741,17 +745,23 @@ function initSwipe(row) {
         dragFull.style.maxHeight = (progress * (DRAG_OPEN_H - DRAG_CLOSED_H)) + 'px';
         dragFull.style.opacity = progress;
       }
+      if (dragActs) {
+        dragActs.style.maxHeight = (progress * 40) + 'px';
+        dragActs.style.opacity = progress;
+      }
       if (dragBadge) dragBadge.style.opacity = 1 - progress;
       dragOpenAmt = clamped - DRAG_CLOSED_H;
     });
   }
 
+  const SNAP_TR = 'max-height 300ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease';
   function snapDragOpen() {
     isDragOpen = true;
     const SPR_D = '300ms cubic-bezier(0.22,1,0.36,1)';
     card.style.transition = 'height ' + SPR_D; row.style.transition = 'height ' + SPR_D;
     card.style.height = DRAG_OPEN_H + 'px'; row.style.height = DRAG_OPEN_H + 'px';
-    if (dragFull) { dragFull.style.transition = 'max-height 300ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease'; dragFull.style.maxHeight = (DRAG_OPEN_H - DRAG_CLOSED_H) + 'px'; dragFull.style.opacity = '1'; }
+    if (dragFull) { dragFull.style.transition = SNAP_TR; dragFull.style.maxHeight = (DRAG_OPEN_H - DRAG_CLOSED_H) + 'px'; dragFull.style.opacity = '1'; }
+    if (dragActs) { dragActs.style.transition = SNAP_TR; dragActs.style.maxHeight = '40px'; dragActs.style.opacity = '1'; }
     card.classList.add('drag-open');
   }
 
@@ -760,7 +770,8 @@ function initSwipe(row) {
     const SPR_D = '300ms cubic-bezier(0.22,1,0.36,1)';
     card.style.transition = 'height ' + SPR_D; row.style.transition = 'height ' + SPR_D;
     card.style.height = DRAG_CLOSED_H + 'px'; row.style.height = DRAG_CLOSED_H + 'px';
-    if (dragFull) { dragFull.style.transition = 'max-height 300ms cubic-bezier(0.22,1,0.36,1), opacity 200ms ease'; dragFull.style.maxHeight = '0'; dragFull.style.opacity = '0'; }
+    if (dragFull) { dragFull.style.transition = SNAP_TR; dragFull.style.maxHeight = '0'; dragFull.style.opacity = '0'; }
+    if (dragActs) { dragActs.style.transition = SNAP_TR; dragActs.style.maxHeight = '0'; dragActs.style.opacity = '0'; }
     card.classList.remove('drag-open');
   }
 
@@ -778,7 +789,7 @@ function initSwipe(row) {
     scrollVelY = 0; scrollPrevT = performance.now();
     card.setPointerCapture(e.pointerId);
     instant();
-    if (isDragExpandable) { card.style.transition = 'none'; row.style.transition = 'none'; if (dragFull) dragFull.style.transition = 'none'; }
+    if (isDragExpandable) { card.style.transition = 'none'; row.style.transition = 'none'; if (dragFull) dragFull.style.transition = 'none'; if (dragActs) dragActs.style.transition = 'none'; }
 
     if (!isDragExpandable) {
       pressT = setTimeout(() => {
