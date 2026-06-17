@@ -58,10 +58,17 @@
   #panels.open { transform: translateY(0); overflow-y: auto; scrollbar-width: none; touch-action: pan-y; overscroll-behavior: none; -webkit-overflow-scrolling: touch; }
   #panels::-webkit-scrollbar { display: none; }
   .notif-list { padding: 190px 0 80px; display: flex; flex-direction: column; }
+  .notif-title-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 30px 16px;
+  }
+  .notif-title-bar .notif-title {
+    font-size: 20px; font-weight: 400; color: #fff;
+  }
 
   /* ── Row ── */
   .notif-row {
-    position: relative; height: 96px; margin-bottom: 12px;
+    position: relative; height: 96px; margin-bottom: 18px;
     flex-shrink: 0; overflow: hidden;
   }
   .notif-row.dismissing {
@@ -73,7 +80,7 @@
 
   /* ── Swipe buttons ── */
   .notif-actions {
-    position: absolute; top: 0; right: 10px; height: 96px;
+    position: absolute; top: 0; right: 30px; height: 96px;
     display: flex; align-items: stretch; gap: 6px;
   }
   .notif-btn {
@@ -88,11 +95,11 @@
 
   /* ── Card ── */
   .notif-card {
-    position: absolute; left: 10px; top: 0;
-    width: 520px; height: 96px;
+    position: absolute; left: 30px; top: 0;
+    width: 480px; height: 96px;
     background: #303030; border-radius: 12px;
     display: flex; align-items: center;
-    padding: 0 10px 0 20px; gap: 16px;
+    padding: 0 20px; gap: 16px;
     z-index: 2; will-change: transform; cursor: grab;
     touch-action: pan-y;
   }
@@ -186,7 +193,7 @@
   .stack-condensed .notif-row { margin-bottom: 0; }
   .stack-peek {
     position: absolute; bottom: 0;
-    left: 38px; width: 464px; height: 14px;
+    left: 48px; width: 424px; height: 14px;
     background: #222222; border-radius: 0 0 12px 12px;
   }
   .stack-front { background: #303030 !important; }
@@ -198,8 +205,15 @@
   .stack-expanded.open { display: flex; }
   .stack-label {
     font-size: 13px; font-weight: 600; color: #6A6A6A;
-    padding: 4px 20px 8px; cursor: pointer;
+    padding: 4px 30px 8px; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between;
   }
+  .stack-clear {
+    font-size: 13px; font-weight: 600; color: #6A6A6A;
+    background: #303030; border-radius: 999px;
+    padding: 4px 12px; cursor: pointer; flex-shrink: 0;
+  }
+  .stack-clear:active { background: #3a3a3a; }
 
   /* ── Options menu ── */
   .menu-backdrop {
@@ -266,6 +280,11 @@
 
   <div id="panels">
     <div class="notif-list" id="notif-list">
+
+      <div class="notif-title-bar">
+        <span class="notif-title">Notifications</span>
+        <span class="stack-clear clear-all">Clear all</span>
+      </div>
 
       <!-- Phone: Pritam -->
       <div class="notif-row">
@@ -384,7 +403,7 @@
           </div>
         </div>
         <div class="stack-expanded">
-          <div class="stack-label">X</div>
+          <div class="stack-label"><span class="stack-title">X</span><span class="stack-clear">Clear</span></div>
           <div class="notif-row">
             <div class="notif-actions"><div class="notif-btn btn-options">Options</div><div class="notif-btn btn-clear">Clear</div></div>
             <div class="notif-card" data-app="X">
@@ -627,7 +646,7 @@ optionsMenu.querySelectorAll('.options-menu-item').forEach(el =>
 );
 
 /* ── Swipe + long-press ── */
-const CARD_W = 520, T_SNAP = CARD_W * 0.28, T_DISMISS_L = CARD_W * 0.85;
+const CARD_W = 480, T_SNAP = CARD_W * 0.28, T_DISMISS_L = CARD_W * 0.85;
 const T_DISMISS_R = CARD_W * 0.35, SNAP_REVEAL = 200;
 const FLICK_V_L = 1.2, FLICK_V_R = 0.6;
 const BTN_GAP = 6, CARD_PAD = 8, CLEAR_ONSET = 240;
@@ -990,7 +1009,53 @@ document.querySelectorAll('.notif-stack').forEach(stack => {
 
   frontCard.addEventListener('click', openStack);
   label.addEventListener('click', closeStack);
+
+  const clearChip = stack.querySelector('.stack-clear');
+  if (clearChip) {
+    clearChip.addEventListener('click', e => {
+      e.stopPropagation();
+      const rows = expanded.querySelectorAll('.notif-row');
+      rows.forEach((row, i) => {
+        const card = row.querySelector('.notif-card');
+        setTimeout(() => {
+          card.style.transition = 'transform 180ms cubic-bezier(0.25,1,0.5,1)';
+          card.style.transform = `translateX(-${CARD_W + 40}px)`;
+          setTimeout(() => row.classList.add('dismissing'), 160);
+        }, i * 50);
+      });
+      setTimeout(() => stack.remove(), rows.length * 50 + 500);
+    });
+  }
 });
+
+/* ── Clear all ── */
+const clearAllChip = document.querySelector('.clear-all');
+if (clearAllChip) {
+  clearAllChip.addEventListener('click', e => {
+    e.stopPropagation();
+    const items = document.querySelectorAll('#notif-list > .notif-row, #notif-list > .notif-stack');
+    let n = 0;
+    items.forEach((item, i) => {
+      const cards = item.querySelectorAll('.notif-card');
+      setTimeout(() => {
+        cards.forEach(c => {
+          c.style.transition = 'transform 180ms cubic-bezier(0.25,1,0.5,1)';
+          c.style.transform = `translateX(-${CARD_W + 40}px)`;
+        });
+        setTimeout(() => {
+          if (item.classList.contains('notif-stack')) item.remove();
+          else item.classList.add('dismissing');
+        }, 160);
+      }, i * 50);
+      n = i;
+    });
+    items.forEach((item, i) => {
+      if (!item.classList.contains('notif-stack')) {
+        setTimeout(() => item.remove(), i * 50 + 540);
+      }
+    });
+  });
+}
 
 /* Panel-level click handler */
 panels.addEventListener('click', e => {
